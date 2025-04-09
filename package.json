@@ -3,10 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev:next": "next dev",
-    "dev:tauri": "tauri dev",
-    "dev": "concurrently \"bun run dev:next\" \"bun run dev:tauri\"",
-    "build": "next build && tauri build",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "tauri": "tauri"
@@ -14,7 +12,6 @@
   "dependencies": {
     "@tauri-apps/api": "^2.4.1",
     "@tauri-apps/cli": "^2.4.1",
-    "concurrently": "^9.1.2",
     "next": "15.2.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
