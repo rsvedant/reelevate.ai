@@ -87,9 +87,9 @@ pub async fn download_model(model_info: LlmModel, app_state: State<'_, Arc<Mutex
     
     // Check if model already exists
     if model_path.exists() {
-        // Update the model path in state
-        let app_state_guard = app_state.lock().map_err(|e| e.to_string())?;
-        let mut llm_state_guard = app_state_guard.llm.lock().map_err(|e| e.to_string())?;
+        // Update the model path in state - avoid nested locks
+        let llm_state = &app_state.llm;  // Immutably borrow the Arc<Mutex<LlmState>>
+        let mut llm_state_guard = llm_state.lock().map_err(|e| e.to_string())?;
         llm_state_guard.model_path = Some(model_path.clone());
         
         return Ok(format!("Model {} already exists", model_info.name));
@@ -114,9 +114,9 @@ pub async fn download_model(model_info: LlmModel, app_state: State<'_, Arc<Mutex
         file.write_all(&chunk).map_err(|e| e.to_string())?;
     }
     
-    // Update the model path in state
-    let app_state_guard = app_state.lock().map_err(|e| e.to_string())?;
-    let mut llm_state_guard = app_state_guard.llm.lock().map_err(|e| e.to_string())?;
+    // Update the model path in state - avoid nested locks
+    let llm_state = &app_state.llm;  // Immutably borrow the Arc<Mutex<LlmState>>
+    let mut llm_state_guard = llm_state.lock().map_err(|e| e.to_string())?;
     llm_state_guard.model_path = Some(model_path);
     
     Ok(format!("Successfully downloaded model {}", model_info.name))
@@ -207,51 +207,56 @@ pub async fn chat(
     let model_read_guard = model_arc_for_inference.read().await;
     let mut session = model_read_guard.start_session(Default::default());
     
-    let mut response_content = String::new();
-    let mut rng = thread_rng();
-    
-    // Create our own error type
-    #[derive(Debug)]
-    struct CustomError(String);
-    
-    impl fmt::Display for CustomError {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(f, "{}", self.0)
-        }
-    }
-    
-    impl StdError for CustomError {}
-    
-    // Infer using the correct API, adapting to whatever version you have
-    session.infer::<CustomError>(
-        model_read_guard.as_ref(),
-        &mut rng, 
-        &llm::InferenceRequest {
-            prompt: format!("{}\nAssistant:", history).as_str().into(),
-            parameters: Some(&llm::InferenceParameters::default()),
-            play_back_previous_tokens: false,
-            maximum_token_count: Some(1024),
-        },
-        &mut Default::default(),
-        |t| {
-            // Extract token string directly from the type
-            // This will work with both older and newer llm crate versions
-            if format!("{:?}", t).contains("InferredToken") {
-                // Try to extract the token text using a simple string manipulation approach
-                let debug_str = format!("{:?}", t);
-                if let Some(start) = debug_str.find("\"") {
-                    if let Some(end) = debug_str[start+1..].find("\"") {
-                        let token = &debug_str[start+1..start+1+end];
-                        response_content.push_str(token);
-                    }
-                }
+    let history_clone = history.clone();
+    let response_content = task::spawn_blocking(move || -> Result<String, String> {
+        let mut response = String::new();
+        let mut rng = thread_rng();
+        
+        // Create our own error type
+        #[derive(Debug)]
+        struct CustomError(String);
+        
+        impl fmt::Display for CustomError {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "{}", self.0)
             }
-            
-            // Return unit type () wrapped in Ok
-            Ok(())
-        },
-    )
-    .map_err(|e| e.to_string())?;
+        }
+        
+        impl StdError for CustomError {}
+        
+        // Infer using the correct API, offloaded to a blocking thread
+        session.infer::<CustomError>(
+            model_read_guard.as_ref(),
+            &mut rng, 
+            &llm::InferenceRequest {
+                prompt: format!("{}\nAssistant:", history_clone).as_str().into(),
+                parameters: Some(&llm::InferenceParameters::default()),
+                play_back_previous_tokens: false,
+                maximum_token_count: Some(1024),
+            },
+            &mut Default::default(),
+            |t| {
+                // Properly handle token extraction
+                match t {
+                    llm::InferenceResponse::Token(token) => {
+                        // Use the appropriate method based on the API version
+                        if let Some(text) = token.text() {
+                            response.push_str(text);
+                        } else if let Some(text) = token.as_str() {
+                            response.push_str(text);
+                        }
+                    }
+                    _ => {} // Ignore other inference responses
+                }
+                Ok(())
+            },
+        )
+        .map_err(|e| e.to_string())?;
+        
+        Ok(response)
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))??;
     
     Ok(response_content)
 }
