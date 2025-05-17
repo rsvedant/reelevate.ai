@@ -1,5 +1,10 @@
+mod llm;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+
+  let app_state = llm::init_app_state();
+
   tauri::Builder::default()
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -11,6 +16,12 @@ pub fn run() {
       }
       Ok(())
     })
+    .manage(app_state)
+    .invoke_handler(tauri::generate_handler![
+      llm::get_models,
+      llm::download_model,
+      llm::chat
+    ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

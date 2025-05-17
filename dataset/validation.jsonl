@@ -1,0 +1,506 @@
+// to be used soon for fine-tuning the brainrot LLM
+// credits to https://huggingface.co/datasets/shvn22k/brainrot-dataset/raw/main/validation.jsonl
+
+{"source": "I'm going for a walk in the park.", "target": "tryna stroll in the park fr 🌳 king out here chasin vibes 🙏 nature grind"}
+{"source": "This pizza is absolutely delicious.", "target": "this za hittin different fr 🍕 taste buds in love king 🙏 flavor god"}
+{"source": "She's really good at painting.", "target": "she slappin colors on canvas fr 🎨 art queen got vision 🙏 brush legend"}
+{"source": "I need to finish my homework.", "target": "homework starin me down fr 📚 gotta lock in king 🙏 study grind mode"}
+{"source": "He's always so kind to strangers.", "target": "bro spreadin love to randos fr 😇 kind king got heart 🙏 pure energy"}
+{"source": "Let's go to an art gallery.", "target": "art gallery vibes? 🖼️ lets soak in culture fr king/queen 🙏 aesthetic quest"}
+{"source": "This song is super catchy.", "target": "this track stuck in my head fr 🎶 banger king vibes 🙏 melody takeover"}
+{"source": "I need to take a quick shower.", "target": "gotta hop in the shower fr 🚿 tryna get fresh king 🙏 clean mode on"}
+{"source": "He's incredibly disciplined.", "target": "bro stayin locked in fr 💪 discipline king dodgin chaos 🙏 routine champ"}
+{"source": "The sunset is gorgeous today.", "target": "sunset poppin off fr 🌅 sky paintin masterpieces 🙏 golden hour elite"}
+{"source": "I'm learning to knit.", "target": "tryna stitch some cozy fr 🧶 knit king risin 🙏 yarn grind"}
+{"source": "This movie is so boring.", "target": "this flick puttin me to sleep fr 📽️ boring af king 🙏 need action stat"}
+{"source": "She's amazing at solving puzzles.", "target": "she crackin puzzles like a pro fr 🧩 brain queen got IQ 🙏 riddle master"}
+{"source": "I need to buy new socks.", "target": "socks fallin apart fr 🧦 gotta cop fresh ones king 🙏 foot drip upgrade"}
+{"source": "Let's try that new sushi place.", "target": "sushi spot vibes? 🍣 lets roll some raw fr king/queen 🙏 flavor adventure"}
+{"source": "He's always so optimistic.", "target": "bro seein sunshine always fr 😎 optimistic king radiates hope 🙏 good vibes"}
+{"source": "This board game is so fun.", "target": "this board game hittin fr 🎲 fun levels maxed king 🙏 strategy vibes"}
+{"source": "I need to vacuum my room.", "target": "room lookin dusty fr 🧹 gotta vacuum king 🙏 clean space mission"}
+{"source": "She's super charismatic.", "target": "her charm pullin everyone in fr ✨ charisma queen owns it 🙏 vibe magnet"}
+{"source": "Let's plan a beach day.", "target": "beach day vibes? 🏖️ lets catch waves fr king/queen 🙏 sandy adventure"}
+{"source": "I'm feeling a bit stressed.", "target": "stress creepin hard fr 😫 need to chill king 🙏 zen mode needed"}
+{"source": "This ice cream is so creamy.", "target": "this ice cream slidin smooth fr 🍨 creamy king vibes 🙏 dessert elite"}
+{"source": "He's awesome at photography.", "target": "bro snappin pics like a pro fr 📸 photo king got angles 🙏 lens legend"}
+{"source": "I need to set my calendar.", "target": "schedule lookin wild fr 📅 gotta set it king 🙏 time managin vibes"}
+{"source": "She's so graceful.", "target": "she movin like a swan fr 💃 graceful queen got poise 🙏 elegance vibes"}
+{"source": "Let's watch the moonlight.", "target": "moonlight vibes? 🌙 lets gaze at glow fr king/queen 🙏 lunar quest"}
+{"source": "This comedy show is hilarious.", "target": "this comedy got me cryin fr 😂 humor king vibes 🙏 laugh riot"}
+{"source": "I need more coffee.", "target": "coffee tank on E fr ☕ gotta brew more king 🙏 caffeine lifeline"}
+{"source": "He's very strategic.", "target": "bro plannin like a chess pro fr 🧠 strategic king got moves 🙏 mastermind"}
+{"source": "This jacket is so stylish.", "target": "this jacket drippin fr 🧥 style king rockin it 🙏 fashion flex"}
+{"source": "I'm trying to eat healthier.", "target": "tryna munch clean fr 🥗 health king dodgin junk 🙏 nutrition grind"}
+{"source": "She's a fantastic singer.", "target": "her vocals hittin angelic fr 🎤 singer queen got pipes 🙏 melody goddess"}
+{"source": "Let's go to a comedy club.", "target": "comedy club vibes? 😂 lets catch jokes fr king/queen 🙏 laugh adventure"}
+{"source": "This chair is so uncomfortable.", "target": "this chair tryna ruin me fr 💺 need a comfy one king 🙏 seat upgrade"}
+{"source": "He's very generous.", "target": "bro givin big fr 🎁 generous king got heart 🙏 selfless vibes"}
+{"source": "I need to try yoga.", "target": "yoga callin fr 🧘‍♂️ gotta stretch king 🙏 zen flow mission"}
+{"source": "This city view is breathtaking.", "target": "this city view slappin fr 🌆 skyline flexin hard 🙏 urban masterpiece"}
+{"source": "She's always on time.", "target": "she clockin in perfect fr ⏰ punctual queen respects time 🙏 schedule boss"}
+{"source": "I need to organize my books.", "target": "bookshelf lookin chaotic fr 📚 gotta sort it king 🙏 literary glow up"}
+{"source": "He's great at fixing things.", "target": "bro repairin like a pro fr 🔧 fix-it king makes it work 🙏 DIY champ"}
+{"source": "Let's eat at that food truck.", "target": "food truck vibes? 🌮 lets grub some fire fr king/queen 🙏 street eats quest"}
+{"source": "This app is so useful.", "target": "this app savin my life fr 📱 useful af king 🙏 tech clutch"}
+{"source": "I'm feeling super motivated.", "target": "motivation hittin max fr 💥 ready to crush king 🙏 grind mode on"}
+{"source": "She's incredibly patient.", "target": "she chill through chaos fr 😌 patient queen got zen 🙏 calm master"}
+{"source": "I need to feed my cat.", "target": "cat starvin fr 🐱 gotta feed her king 🙏 purr duties"}
+{"source": "He's a skilled guitarist.", "target": "bro shreddin strings fr 🎸 guitar king got riffs 🙏 music legend"}
+{"source": "Let's explore a museum.", "target": "museum vibes? 🏛️ lets dive in history fr king/queen 🙏 culture quest"}
+{"source": "This lemonade is so refreshing.", "target": "this lemonade hittin crisp fr 🍋 refreshin king vibes 🙏 summer elite"}
+{"source": "I'm learning to draw.", "target": "tryna sketch some heat fr ✍️ draw king risin 🙏 art grind"}
+{"source": "She's super confident.", "target": "she ownin every room fr 😎 confident queen got swagger 🙏 boss energy"}
+{"source": "I need to update my playlist.", "target": "tunes feelin stale fr 🎧 gotta refresh playlist king 🙏 new banger hunt"}
+{"source": "He's hilariously funny.", "target": "bro droppin jokes fr 😂 funny king got us rollin 🙏 humor god"}
+{"source": "Let's go bowling.", "target": "bowling vibes? 🎳 lets roll some strikes fr king/queen 🙏 alley adventure"}
+{"source": "This bed is so cozy.", "target": "this bed huggin me fr 🛏️ cozy king vibes 🙏 sleep paradise"}
+{"source": "I'm trying to save energy.", "target": "tryna cut power waste fr 💡 eco king stayin green 🙏 planet grind"}
+{"source": "She's a brilliant writer.", "target": "her words hittin deep fr ✍️ writer queen got stories 🙏 literary legend"}
+{"source": "I need to tune my piano.", "target": "piano soundin off fr 🎹 gotta tune it king 🙏 melody mission"}
+{"source": "He's always supportive.", "target": "bro holdin it down fr 🤝 supportive king got ur back 🙏 ride or die"}
+{"source": "Let's make homemade pasta.", "target": "homemade pasta vibes? 🍝 lets roll some dough fr king/queen 🙏 chef quest"}
+{"source": "This river is so peaceful.", "target": "this river hittin zen fr 🌊 calm vibes king 🙏 nature’s serenity"}
+{"source": "I'm feeling a bit tired.", "target": "energy tank low fr 😴 need a recharge king 🙏 rest mode needed"}
+{"source": "She's a phenomenal runner.", "target": "she sprintin like a champ fr 🏃‍♀️ runner queen got speed 🙏 track legend"}
+{"source": "I need to restock my fridge.", "target": "fridge lookin empty fr 🧀 gotta restock king 🙏 kitchen reload"}
+{"source": "He's a master barista.", "target": "bro brewin art fr ☕ barista king droppin lattes 🙏 coffee god"}
+{"source": "Let's go on a hike.", "target": "hike vibes? 🥾 lets climb trails fr king/queen 🙏 nature adventure"}
+{"source": "This hat is so cool.", "target": "this hat drippin fr 🧢 cool king rockin it 🙏 headspace flex"}
+{"source": "I'm updating my resume.", "target": "resume needs a glow up fr 📄 tryna flex my skills king 🙏 career grind"}
+{"source": "She's super curious.", "target": "she diggin for answers fr 🧠 curious queen got questions 🙏 knowledge champ"}
+{"source": "I need to stretch my legs.", "target": "legs feelin tight fr 🧘 gotta stretch king 🙏 mobility mission"}
+{"source": "He's very polite.", "target": "bro keepin it classy fr 🙇 polite king got manners 🙏 respect vibes"}
+{"source": "Let's try rock climbing.", "target": "rock climbin vibes? 🧗‍♂️ lets grip some walls fr king/queen 🙏 thrill quest"}
+{"source": "This smoothie is so vibrant.", "target": "this smoothie poppin colors fr 🥤 vibrant king vibes 🙏 blended art"}
+{"source": "I'm feeling creative.", "target": "art juice flowin fr 🎨 creative king ready to make 🙏 inspiration max"}
+{"source": "She's a great organizer.", "target": "she plannin like a pro fr 📋 organizer queen got it locked 🙏 order master"}
+{"source": "I need to call my friend.", "target": "friend waitin for a ping fr 📞 gotta call em king 🙏 squad vibes"}
+{"source": "He's super loyal.", "target": "bro ridin for the team fr 🤝 loyal king never switches 🙏 real one vibes"}
+{"source": "Let's visit a botanical garden.", "target": "botanical vibes? 🌿 lets stroll in green fr king/queen 🙏 plant quest"}
+{"source": "This candle smells amazing.", "target": "this candle settin vibes fr 🕯️ smellin like heaven king 🙏 cozy glow"}
+{"source": "I'm learning to garden.", "target": "tryna grow some green fr 🌱 garden king risin 🙏 plant grind"}
+{"source": "She's incredibly witty.", "target": "her comebacks snappin fr 😏 witty queen got quips 🙏 humor champ"}
+{"source": "I need to repaint my door.", "target": "door lookin faded fr 🚪 gotta repaint king 🙏 fresh entry vibes"}
+{"source": "He's a talented poet.", "target": "bro spittin verses fr 📜 poet king got soul 🙏 lyrical legend"}
+{"source": "Let's try a new cafe.", "target": "new cafe vibes? ☕ lets sip some vibes fr king/queen 🙏 coffee quest"}
+{"source": "This forest is so quiet.", "target": "this forest hittin silent fr 🌲 zen vibes king 🙏 nature’s peace"}
+{"source": "I'm feeling hungry.", "target": "stomach growlin fr 🍽️ need a snack king 🙏 hunger alert"}
+{"source": "She's ultra reliable.", "target": "she solid every time fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to replace my headphones.", "target": "headphones dyin fr 🎧 gotta cop new ones king 🙏 audio vibes crisis"}
+{"source": "He's a fantastic illustrator.", "target": "bro drawin bangers fr ✍️ illustrator king got style 🙏 art legend"}
+{"source": "Let's go to a rooftop party.", "target": "rooftop party vibes? 🎉 lets vibe sky high fr king/queen 🙏 city quest"}
+{"source": "This blanket is so soft.", "target": "this blanket feelin plush fr 🛋️ soft king vibes 🙏 snuggle heaven"}
+{"source": "I'm trying to drink more water.", "target": "tryna stay hydrated fr 💧 water king chuggin H2O 🙏 health grind"}
+{"source": "She's a visionary designer.", "target": "she craftin aesthetics fr 🎨 designer queen got vision 🙏 style legend"}
+{"source": "I need to dust my fan.", "target": "fan lookin dusty fr 🌀 gotta clean it king 🙏 fresh air mission"}
+{"source": "He's very inspiring.", "target": "bro sparkin dreams fr 🔥 inspiring king lifts souls 🙏 motivation champ"}
+{"source": "Let's go to a lantern festival.", "target": "lantern fest vibes? 🏮 lets light up the night fr king/queen 🙏 glow quest"}
+{"source": "This soup is so comforting.", "target": "this soup warmin my soul fr 🥣 comfort king vibes 🙏 cozy elite"}
+{"source": "I'm feeling calm.", "target": "vibes all serene fr 😌 calm king in zen mode 🙏 peace maxed"}
+{"source": "She's a superb teammate.", "target": "she holdin the squad down fr 🤝 teammate queen got synergy 🙏 crew champ"}
+{"source": "I need to replace my toothbrush.", "target": "toothbrush lookin beat fr 🪥 gotta swap it king 🙏 fresh breath vibes"}
+{"source": "He's very dependable.", "target": "bro rock solid fr 💯 dependable king always delivers 🙏 clutch vibes"}
+{"source": "Let's go to a flea market.", "target": "flea market vibes? 🛍️ lets hunt treasures fr king/queen 🙏 bargain quest"}
+{"source": "This brownie is so fudgy.", "target": "this brownie meltin rich fr 🍫 fudgy king vibes 🙏 dessert elite"}
+{"source": "I'm trying to be more organized.", "target": "tryna get my life in order fr 📋 organized king sortin chaos 🙏 tidy grind"}
+{"source": "She's very radiant.", "target": "she glowin like the sun fr ✨ radiant queen spreads light 🙏 pure vibes"}
+{"source": "I need to clean my microwave.", "target": "microwave lookin splattered fr 🍽️ gotta clean it king 🙏 zap vibes mission"}
+{"source": "He's a skilled debater.", "target": "bro arguin like a pro fr 🗣️ debater king got logic 🙏 word champ"}
+{"source": "Let's go to a dance showcase.", "target": "dance showcase vibes? 💃 lets see moves fr king/queen 🙏 rhythm quest"}
+{"source": "This dip is so flavorful.", "target": "this dip hittin all the spots fr 🥙 flavor king vibes 🙏 snack elite"}
+{"source": "I'm feeling empowered.", "target": "power levels maxed fr 💪 empowered king ready to rule 🙏 confidence boost"}
+{"source": "She's very authentic.", "target": "she keepin it 100 fr 🙌 authentic queen no fake vibes 🙏 real energy"}
+{"source": "I need to fix my bike chain.", "target": "bike chain actin up fr 🚴‍♂️ gotta fix it king 🙏 ride vibes mission"}
+{"source": "He's really enthusiastic.", "target": "bro hyped for everything fr 🎉 enthusiastic king got energy 🙏 vibe machine"}
+{"source": "Let's go to a candle workshop.", "target": "candle workshop vibes? 🕯️ lets craft some glow fr king/queen 🙏 cozy quest"}
+{"source": "This tart is so zesty.", "target": "this tart zappin my tongue fr 🥧 zesty king vibes 🙏 dessert elite"}
+{"source": "I'm trying to be more mindful.", "target": "tryna stay present fr 🧘 mindful king livin now 🙏 awareness grind"}
+{"source": "She's very charismatic.", "target": "she pullin everyone in fr ✨ charismatic queen owns vibes 🙏 charm champ"}
+{"source": "I need to clean my cutting board.", "target": "cuttin board lookin rough fr 🔪 gotta clean it king 🙏 chop vibes mission"}
+{"source": "He's a great motivator.", "target": "bro pushin everyone up fr 💪 motivator king inspires all 🙏 hype legend"}
+{"source": "Let's go to a succulent class.", "target": "succulent vibes? 🌵 lets plant some babies fr king/queen 🙏 green quest"}
+{"source": "This bagel is so chewy.", "target": "this bagel chewin elite fr 🥯 chewy king vibes 🙏 breakfast elite"}
+{"source": "I'm feeling content.", "target": "vibes all good fr 😌 content king chillin happy 🙏 peace overload"}
+{"source": "She's very insightful.", "target": "her thoughts droppin gems fr 🧠 insightful queen sees deep 🙏 wisdom champ"}
+{"source": "I need to clean my toaster.", "target": "toaster lookin crumby fr 🍞 gotta clean it king 🙏 toast vibes mission"}
+{"source": "He's really adventurous.", "target": "bro chasin thrills fr 🌍 adventurous king lives bold 🙏 explorer legend"}
+{"source": "Let's go to a mixology workshop.", "target": "mixology vibes? 🍸 lets shake some drinks fr king/queen 🙏 cocktail quest"}
+{"source": "This granola is so crunchy.", "target": "this granola snappin loud fr 🥜 crunchy king vibes 🙏 snack elite"}
+{"source": "I'm trying to be more resilient.", "target": "tryna bounce back fr 💪 resilient king stayin strong 🙏 comeback grind"}
+{"source": "She's very inspiring.", "target": "she lightin up souls fr 🔥 inspiring queen motivates all 🙏 vibe lifter"}
+{"source": "I need to clean my kettle.", "target": "kettle lookin scaly fr 🫖 gotta clean it king 🙏 tea vibes mission"}
+{"source": "He's a great comedian.", "target": "bro droppin bangers fr 😂 comedian king got us rollin 🙏 humor legend"}
+{"source": "Let's go to a book reading.", "target": "book readin vibes? 📖 lets hear some pages fr king/queen 🙏 literary quest"}
+{"source": "This salsa is so spicy.", "target": "this salsa burnin my soul fr 🌶️ spicy king vibes 🙏 flavor elite"}
+{"source": "I'm feeling optimistic.", "target": "vibes all sunny fr 😎 optimistic king seein bright days 🙏 hope overload"}
+{"source": "She's very proactive.", "target": "she makin moves first fr 🚀 proactive queen stays ahead 🙏 action legend"}
+{"source": "I need to fix my door hinge.", "target": "door hinge squeakin fr 🚪 gotta fix it king 🙏 smooth entry vibes"}
+{"source": "He's really genuine.", "target": "bro keepin it real fr 🙌 genuine king no fake vibes 🙏 authentic energy"}
+{"source": "Let's go to a knitting workshop.", "target": "knittin vibes? 🧶 lets stitch some cozy fr king/queen 🙏 crafty quest"}
+{"source": "This mousse is so airy.", "target": "this mousse floatin light fr 🥄 airy king vibes 🙏 dessert elite"}
+{"source": "I'm trying to be more courageous.", "target": "tryna face fears fr 🦁 courageous king steppin up 🙏 bravery grind"}
+{"source": "She's very compassionate.", "target": "she carin deep fr 😇 compassionate queen got love 🙏 empathy legend"}
+{"source": "I need to clean my blender.", "target": "blender lookin messy fr 🍹 gotta clean it king 🙏 smoothie vibes mission"}
+{"source": "He's a great strategist.", "target": "bro plannin like a general fr 🧠 strategist king got moves 🙏 chess master"}
+{"source": "Let's go to a vinyl fair.", "target": "vinyl fair vibes? 🎵 lets hunt classics fr king/queen 🙏 retro quest"}
+{"source": "This pita is so fluffy.", "target": "this pita feelin plush fr 🥙 fluffy king vibes 🙏 bread elite"}
+{"source": "I'm feeling uplifted.", "target": "vibes sky high fr 🚀 uplifted king feelin great 🙏 positivity overload"}
+{"source": "She's very considerate.", "target": "she thinkin of others fr 💭 considerate queen got heart 🙏 kindness champ"}
+{"source": "I need to replace my light bulbs.", "target": "bulbs actin dim fr 💡 gotta swap em king 🙏 bright vibes mission"}
+{"source": "He's really passionate.", "target": "bro burnin with passion fr 🔥 passionate king goes hard 🙏 fire energy"}
+{"source": "Let's go to a kite workshop.", "target": "kite workshop vibes? 🪁 lets craft some wings fr king/queen 🙏 sky quest"}
+{"source": "This falafel is so crispy.", "target": "this falafel snappin hard fr 🥙 crispy king vibes 🙏 flavor elite"}
+{"source": "I'm trying to be more grateful.", "target": "tryna count my blessings fr 🙌 grateful king stayin humble 🙏 thankfulness grind"}
+{"source": "She's very engaging.", "target": "she pullin everyone in fr 🗣️ engaging queen got vibes 🙏 crowd magnet"}
+{"source": "I need to clean my fridge.", "target": "fridge lookin sus fr 🧀 gotta clean it king 🙏 fresh vibes mission"}
+{"source": "He's a great facilitator.", "target": "bro makin it flow fr 🤝 facilitator king keeps it smooth 🙏 group champ"}
+{"source": "Let's go to a storytelling night.", "target": "storytellin vibes? 📖 lets hear some tales fr king/queen 🙏 narrative quest"}
+{"source": "This tzatziki is so creamy.", "target": "this tzatziki slidin smooth fr 🥙 creamy king vibes 🙏 dip elite"}
+{"source": "I'm feeling empowered.", "target": "power hittin max fr 💪 empowered king ready to rule 🙏 confidence overload"}
+{"source": "She's very authentic.", "target": "she keepin it 100 fr 🙌 authentic queen no fake vibes 🙏 real energy"}
+{"source": "I need to fix my bike tire.", "target": "bike tire actin flat fr 🚴‍♂️ gotta patch it king 🙏 ride vibes mission"}
+{"source": "He's really enthusiastic.", "target": "bro hyped for everything fr 🎉 enthusiastic king got energy 🙏 vibe machine"}
+{"source": "Let's go to a soap workshop.", "target": "soap workshop vibes? 🧼 lets craft some suds fr king/queen 🙏 clean quest"}
+{"source": "This baklava is so sweet.", "target": "this baklava drippin honey fr 🥮 sweet king vibes 🙏 dessert elite"}
+{"source": "I'm trying to be more mindful.", "target": "tryna stay present fr 🧘 mindful king livin now 🙏 awareness grind"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe magnet"}
+{"source": "I need to clean my spice rack.", "target": "spice rack lookin wild fr 🌶️ gotta sort it king 🙏 flavor vibes mission"}
+{"source": "He's a great motivator.", "target": "bro pushin everyone up fr 💪 motivator king inspires all 🙏 hype champ"}
+{"source": "Let's go to a flower workshop.", "target": "flower workshop vibes? 💐 lets craft bouquets fr king/queen 🙏 bloom quest"}
+{"source": "This gelato is so rich.", "target": "this gelato hittin decadent fr 🍦 rich king vibes 🙏 icy elite"}
+{"source": "I'm feeling refreshed.", "target": "feelin brand new fr 🌟 refreshed king ready to roll 🙏 energy reset"}
+{"source": "She's very compassionate.", "target": "she carin deep fr 😇 compassionate queen got love 🙏 empathy legend"}
+{"source": "I need to fix my chair leg.", "target": "chair leg wobblin fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really charismatic.", "target": "bro charmin everyone fr 😎 charismatic king got vibes 🙏 crowd magnet"}
+{"source": "Let's go to a bread workshop.", "target": "bread workshop vibes? 🍞 lets bake some loaves fr king/queen 🙏 dough quest"}
+{"source": "This parfait is so creamy.", "target": "this parfait slidin smooth fr 🥄 creamy king vibes 🙏 dessert elite"}
+{"source": "I'm trying to be more optimistic.", "target": "tryna see the bright side fr 😎 optimistic king chasin hope 🙏 good vibes grind"}
+{"source": "She's very reliable.", "target": "she solid as a rock fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to clean my laptop.", "target": "laptop lookin grimy fr 💻 gotta clean it king 🙏 fresh tech vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a pottery fair.", "target": "pottery fair vibes? 🏺 lets check some clay fr king/queen 🙏 crafty quest"}
+{"source": "This hummus is so smooth.", "target": "this hummus slidin down fr 🥙 smooth king vibes 🙏 dip elite"}
+{"source": "I'm trying to be more assertive.", "target": "tryna speak my truth fr 💬 assertive king standin tall 🙏 confidence grind"}
+{"source": "She's very spirited.", "target": "she burstin with life fr 🎉 spirited queen got vibes 🙏 energy champ"}
+{"source": "I need to clean my air fryer.", "target": "air fryer lookin greasy fr 🍟 gotta clean it king 🙏 crispy vibes mission"}
+{"source": "He's a great planner.", "target": "bro mappin it out fr 📅 planner king got it locked 🙏 foresight champ"}
+{"source": "Let's go to a macrame class.", "target": "macrame vibes? 🪢 lets knot some art fr king/queen 🙏 crafty quest"}
+{"source": "This gazpacho is so cool.", "target": "this gazpacho hittin crisp fr 🥣 cool king vibes 🙏 summer elite"}
+{"source": "I'm feeling serene.", "target": "vibes all calm fr 😌 serene king in zen mode 🙏 peace maxed"}
+{"source": "She's very articulate.", "target": "she spittin clear fr 🗣️ articulate queen nails words 🙏 speech champ"}
+{"source": "I need to fix my window.", "target": "window actin up fr 🪟 gotta fix it king 🙏 breeze vibes mission"}
+{"source": "He's really supportive.", "target": "bro holdin u up fr 🤝 supportive king got ur back 🙏 ride or die vibes"}
+{"source": "Let's go to a cheese tasting.", "target": "cheese tastin vibes? 🧀 lets savor some curd fr king/queen 🙏 dairy quest"}
+{"source": "This cannoli is so crunchy.", "target": "this cannoli snappin hard fr 🥟 crunchy king vibes 🙏 dessert elite"}
+{"source": "I'm trying to be more focused.", "target": "tryna lock in tight fr 🧠 focused king cuttin noise 🙏 zone grind"}
+{"source": "She's very creative.", "target": "she sparkin magic fr 🎨 creative queen got vision 🙏 imagination champ"}
+{"source": "I need to clean my spice grinder.", "target": "spice grinder lookin dusty fr 🌶️ gotta clean it king 🙏 flavor vibes mission"}
+{"source": "He's a great motivator.", "target": "bro pushin everyone up fr 💪 motivator king inspires all 🙏 hype legend"}
+{"source": "Let's go to a flower arranging class.", "target": "flower arrangin vibes? 💐 lets craft bouquets fr king/queen 🙏 bloom quest"}
+{"source": "This sorbet is so refreshing.", "target": "this sorbet hittin cool fr 🍧 refreshin king vibes 🙏 icy elite"}
+{"source": "I'm feeling refreshed.", "target": "feelin brand new fr 🌟 refreshed king ready to roll 🙏 energy reset"}
+{"source": "She's very compassionate.", "target": "she carin deep fr 😇 compassionate queen got love 🙏 empathy legend"}
+{"source": "I need to fix my shelf.", "target": "shelf wobblin fr 📚 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really charismatic.", "target": "bro charmin everyone fr 😎 charismatic king got vibes 🙏 crowd magnet"}
+{"source": "Let's go to a baking class.", "target": "bakin vibes? 🧁 lets whip some treats fr king/queen 🙏 pastry quest"}
+{"source": "This yogurt is so creamy.", "target": "this yogurt slidin smooth fr 🥄 creamy king vibes 🙏 breakfast elite"}
+{"source": "I'm trying to be more confident.", "target": "tryna own my vibe fr 😎 confident king risin up 🙏 self-assured grind"}
+{"source": "She's very supportive.", "target": "she holdin it down fr 🤝 supportive queen got ur back 🙏 ride or die vibes"}
+{"source": "I need to clean my earbuds.", "target": "earbuds lookin grimy fr 🎶 gotta clean em king 🙏 fresh audio vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a writing workshop.", "target": "writin workshop vibes? ✍️ lets craft some words fr king/queen 🙏 literary quest"}
+{"source": "This wrap is so savory.", "target": "this wrap hittin deep fr 🌯 savory king vibes 🙏 lunch elite"}
+{"source": "I'm feeling relaxed.", "target": "vibes all chill fr 😌 relaxed king in zen mode 🙏 stress-free vibes"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe queen"}
+{"source": "I need to fix my chair.", "target": "chair creakin loud fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really creative.", "target": "bro sparkin genius fr 🎨 creative king got vision 🙏 imagination god"}
+{"source": "Let's go to a pottery class.", "target": "pottery class vibes? 🏺 lets mold some art fr king/queen 🙏 creative escape"}
+{"source": "This latte is so smooth.", "target": "this latte slidin down fr ☕ smooth king vibes 🙏 coffee elite"}
+{"source": "I'm feeling motivated.", "target": "motivation on max fr 💥 motivated king ready to crush 🙏 grind mode on"}
+{"source": "She's very reliable.", "target": "she solid as a rock fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to clean my mousepad.", "target": "mousepad lookin grimy fr 🖱️ gotta clean it king 🙏 fresh tech vibes"}
+{"source": "He's a great musician.", "target": "bro droppin melodies fr 🎶 musician king got soul 🙏 music legend"}
+{"source": "Let's go to a film festival.", "target": "film fest vibes? 🎬 lets binge cinema fr king/queen 🙏 movie quest"}
+{"source": "This salad is so crisp.", "target": "this salad snappin fresh fr 🥗 crisp king vibes 🙏 healthy elite"}
+{"source": "I'm trying to be more patient.", "target": "tryna stay chill fr 😌 patient king waitin calm 🙏 zen grind"}
+{"source": "She's very inspiring.", "target": "she sparkin dreams fr 🔥 inspiring queen lifts souls 🙏 motivation champ"}
+{"source": "I need to fix my lamp.", "target": "lamp actin shady fr 💡 gotta fix it king 🙏 bright vibes mission"}
+{"source": "He's really generous.", "target": "bro givin big fr 🎁 generous king got heart 🙏 selfless vibes"}
+{"source": "Let's go to a book signing.", "target": "book signin vibes? 📚 lets meet authors fr king/queen 🙏 literary quest"}
+{"source": "This cookie is so soft.", "target": "this cookie meltin soft fr 🍪 soft king vibes 🙏 snack heaven"}
+{"source": "I'm feeling hopeful.", "target": "hope hittin strong fr 🌟 hopeful king seein light 🙏 optimism overload"}
+{"source": "She's very empathetic.", "target": "she feelin all the feels fr 😔 empathetic queen got heart 🙏 emotional champ"}
+{"source": "I need to clean my desk.", "target": "desk lookin like a warzone fr 🖥️ gotta sort it king 🙏 tidy vibes mission"}
+{"source": "He's a great leader.", "target": "bro leadin like a king fr 👑 leader king inspires all 🙏 squad motivator"}
+{"source": "Let's go to a dance class.", "target": "dance class vibes? 💃 lets move our bodies fr king/queen 🙏 rhythm quest"}
+{"source": "This juice is so tangy.", "target": "this juice zappin my tongue fr 🥤 tangy af king 🙏 zesty vibes"}
+{"source": "I'm feeling energized.", "target": "energy on max fr ⚡ energized king ready to roll 🙏 power vibes"}
+{"source": "She's very creative.", "target": "she sparkin magic fr 🎨 creative queen got vision 🙏 imagination champ"}
+{"source": "I need to organize my files.", "target": "files lookin chaotic fr 📂 gotta sort em king 🙏 digital glow up"}
+{"source": "He's really reliable.", "target": "bro solid every time fr 💯 reliable king never flakes 🙏 trust legend"}
+{"source": "Let's go to a photography workshop.", "target": "photo workshop vibes? 📸 lets snap some shots fr king/queen 🙏 visual quest"}
+{"source": "This smoothie is so refreshing.", "target": "this smoothie hittin crisp fr 🥤 refreshin af king 🙏 liquid vibes"}
+{"source": "I'm trying to be more confident.", "target": "tryna own my vibe fr 😎 confident king risin up 🙏 self-assured grind"}
+{"source": "She's very supportive.", "target": "she holdin it down fr 🤝 supportive queen got ur back 🙏 ride or die vibes"}
+{"source": "I need to clean my earbuds.", "target": "earbuds lookin grimy fr 🎶 gotta clean em king 🙏 fresh audio vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a writing class.", "target": "writin class vibes? ✍️ lets craft some words fr king/queen 🙏 literary quest"}
+{"source": "This wrap is so savory.", "target": "this wrap hittin deep fr 🌯 savory king vibes 🙏 lunch elite"}
+{"source": "I'm feeling relaxed.", "target": "vibes all chill fr 😌 relaxed king in zen mode 🙏 stress-free vibes"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe queen"}
+{"source": "I need to fix my chair.", "target": "chair creakin loud fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really creative.", "target": "bro sparkin genius fr 🎨 creative king got vision 🙏 imagination god"}
+{"source": "Let's go to a pottery class.", "target": "pottery class vibes? 🏺 lets mold some art fr king/queen 🙏 creative escape"}
+{"source": "This latte is so smooth.", "target": "this latte slidin down fr ☕ smooth king vibes 🙏 coffee elite"}
+{"source": "I'm feeling motivated.", "target": "motivation on max fr 💥 motivated king ready to crush 🙏 grind mode on"}
+{"source": "She's very reliable.", "target": "she solid as a rock fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to clean my mousepad.", "target": "mousepad lookin grimy fr 🖱️ gotta clean it king 🙏 fresh tech vibes"}
+{"source": "He's a great musician.", "target": "bro droppin melodies fr 🎶 musician king got soul 🙏 music legend"}
+{"source": "Let's go to a film festival.", "target": "film fest vibes? 🎬 lets binge cinema fr king/queen 🙏 movie quest"}
+{"source": "This salad is so crisp.", "target": "this salad snappin fresh fr 🥗 crisp king vibes 🙏 healthy elite"}
+{"source": "I'm trying to be more patient.", "target": "tryna stay chill fr 😌 patient king waitin calm 🙏 zen grind"}
+{"source": "She's very inspiring.", "target": "she sparkin dreams fr 🔥 inspiring queen lifts souls 🙏 motivation champ"}
+{"source": "I need to fix my lamp.", "target": "lamp actin shady fr 💡 gotta fix it king 🙏 bright vibes mission"}
+{"source": "He's really generous.", "target": "bro givin big fr 🎁 generous king got heart 🙏 selfless vibes"}
+{"source": "Let's go to a book signing.", "target": "book signin vibes? 📚 lets meet authors fr king/queen 🙏 literary quest"}
+{"source": "This cookie is so soft.", "target": "this cookie meltin soft fr 🍪 soft king vibes 🙏 snack heaven"}
+{"source": "I'm feeling hopeful.", "target": "hope hittin strong fr 🌟 hopeful king seein light 🙏 optimism overload"}
+{"source": "She's very empathetic.", "target": "she feelin all the feels fr 😔 empathetic queen got heart 🙏 emotional champ"}
+{"source": "I need to clean my desk.", "target": "desk lookin like a warzone fr 🖥️ gotta sort it king 🙏 tidy vibes mission"}
+{"source": "He's a great leader.", "target": "bro leadin like a king fr 👑 leader king inspires all 🙏 squad motivator"}
+{"source": "Let's go to a dance class.", "target": "dance class vibes? 💃 lets move our bodies fr king/queen 🙏 rhythm quest"}
+{"source": "This juice is so tangy.", "target": "this juice zappin my tongue fr 🥤 tangy af king 🙏 zesty vibes"}
+{"source": "I'm feeling energized.", "target": "energy on max fr ⚡ energized king ready to roll 🙏 power vibes"}
+{"source": "She's very creative.", "target": "she sparkin magic fr 🎨 creative queen got vision 🙏 imagination champ"}
+{"source": "I need to organize my files.", "target": "files lookin chaotic fr 📂 gotta sort em king 🙏 digital glow up"}
+{"source": "He's really reliable.", "target": "bro solid every time fr 💯 reliable king never flakes 🙏 trust legend"}
+{"source": "Let's go to a photography workshop.", "target": "photo workshop vibes? 📸 lets snap some shots fr king/queen 🙏 visual quest"}
+{"source": "This smoothie is so refreshing.", "target": "this smoothie hittin crisp fr 🥤 refreshin af king 🙏 liquid vibes"}
+{"source": "I'm trying to be more confident.", "target": "tryna own my vibe fr 😎 confident king risin up 🙏 self-assured grind"}
+{"source": "She's very supportive.", "target": "she holdin it down fr 🤝 supportive queen got ur back 🙏 ride or die vibes"}
+{"source": "I need to clean my earbuds.", "target": "earbuds lookin grimy fr 🎶 gotta clean em king 🙏 fresh audio vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a writing class.", "target": "writin class vibes? ✍️ lets craft some words fr king/queen 🙏 literary quest"}
+{"source": "This wrap is so savory.", "target": "this wrap hittin deep fr 🌯 savory king vibes 🙏 lunch elite"}
+{"source": "I'm feeling relaxed.", "target": "vibes all chill fr 😌 relaxed king in zen mode 🙏 stress-free vibes"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe queen"}
+{"source": "I need to fix my chair.", "target": "chair creakin loud fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really creative.", "target": "bro sparkin genius fr 🎨 creative king got vision 🙏 imagination god"}
+{"source": "Let's go to a pottery class.", "target": "pottery class vibes? 🏺 lets mold some art fr king/queen 🙏 creative escape"}
+{"source": "This latte is so smooth.", "target": "this latte slidin down fr ☕ smooth king vibes 🙏 coffee elite"}
+{"source": "I'm feeling motivated.", "target": "motivation on max fr 💥 motivated king ready to crush 🙏 grind mode on"}
+{"source": "She's very reliable.", "target": "she solid as a rock fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to clean my mousepad.", "target": "mousepad lookin grimy fr 🖱️ gotta clean it king 🙏 fresh tech vibes"}
+{"source": "He's a great musician.", "target": "bro droppin melodies fr 🎶 musician king got soul 🙏 music legend"}
+{"source": "Let's go to a film festival.", "target": "film fest vibes? 🎬 lets binge cinema fr king/queen 🙏 movie quest"}
+{"source": "This salad is so crisp.", "target": "this salad snappin fresh fr 🥗 crisp king vibes 🙏 healthy elite"}
+{"source": "I'm trying to be more patient.", "target": "tryna stay chill fr 😌 patient king waitin calm 🙏 zen grind"}
+{"source": "She's very inspiring.", "target": "she sparkin dreams fr 🔥 inspiring queen lifts souls 🙏 motivation champ"}
+{"source": "I need to fix my lamp.", "target": "lamp actin shady fr 💡 gotta fix it king 🙏 bright vibes mission"}
+{"source": "He's really generous.", "target": "bro givin big fr 🎁 generous king got heart 🙏 selfless vibes"}
+{"source": "Let's go to a book signing.", "target": "book signin vibes? 📚 lets meet authors fr king/queen 🙏 literary quest"}
+{"source": "This cookie is so soft.", "target": "this cookie meltin soft fr 🍪 soft king vibes 🙏 snack heaven"}
+{"source": "I'm feeling hopeful.", "target": "hope hittin strong fr 🌟 hopeful king seein light 🙏 optimism overload"}
+{"source": "She's very empathetic.", "target": "she feelin all the feels fr 😔 empathetic queen got heart 🙏 emotional champ"}
+{"source": "I need to clean my desk.", "target": "desk lookin like a warzone fr 🖥️ gotta sort it king 🙏 tidy vibes mission"}
+{"source": "He's a great leader.", "target": "bro leadin like a king fr 👑 leader king inspires all 🙏 squad motivator"}
+{"source": "Let's go to a dance class.", "target": "dance class vibes? 💃 lets move our bodies fr king/queen 🙏 rhythm quest"}
+{"source": "This juice is so tangy.", "target": "this juice zappin my tongue fr 🥤 tangy af king 🙏 zesty vibes"}
+{"source": "I'm feeling energized.", "target": "energy on max fr ⚡ energized king ready to roll 🙏 power vibes"}
+{"source": "She's very creative.", "target": "she sparkin magic fr 🎨 creative queen got vision 🙏 imagination champ"}
+{"source": "I need to organize my files.", "target": "files lookin chaotic fr 📂 gotta sort em king 🙏 digital glow up"}
+{"source": "He's really reliable.", "target": "bro solid every time fr 💯 reliable king never flakes 🙏 trust legend"}
+{"source": "Let's go to a photography workshop.", "target": "photo workshop vibes? 📸 lets snap some shots fr king/queen 🙏 visual quest"}
+{"source": "This smoothie is so refreshing.", "target": "this smoothie hittin crisp fr 🥤 refreshin af king 🙏 liquid vibes"}
+{"source": "I'm trying to be more confident.", "target": "tryna own my vibe fr 😎 confident king risin up 🙏 self-assured grind"}
+{"source": "She's very supportive.", "target": "she holdin it down fr 🤝 supportive queen got ur back 🙏 ride or die vibes"}
+{"source": "I need to clean my earbuds.", "target": "earbuds lookin grimy fr 🎶 gotta clean em king 🙏 fresh audio vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a writing class.", "target": "writin class vibes? ✍️ lets craft some words fr king/queen 🙏 literary quest"}
+{"source": "This wrap is so savory.", "target": "this wrap hittin deep fr 🌯 savory king vibes 🙏 lunch elite"}
+{"source": "I'm feeling relaxed.", "target": "vibes all chill fr 😌 relaxed king in zen mode 🙏 stress-free vibes"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe queen"}
+{"source": "I need to fix my chair.", "target": "chair creakin loud fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really creative.", "target": "bro sparkin genius fr 🎨 creative king got vision 🙏 imagination god"}
+{"source": "Let's go to a pottery class.", "target": "pottery class vibes? 🏺 lets mold some art fr king/queen 🙏 creative escape"}
+{"source": "This latte is so smooth.", "target": "this latte slidin down fr ☕ smooth king vibes 🙏 coffee elite"}
+{"source": "I'm feeling motivated.", "target": "motivation on max fr 💥 motivated king ready to crush 🙏 grind mode on"}
+{"source": "She's very reliable.", "target": "she solid as a rock fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to clean my mousepad.", "target": "mousepad lookin grimy fr 🖱️ gotta clean it king 🙏 fresh tech vibes"}
+{"source": "He's a great musician.", "target": "bro droppin melodies fr 🎶 musician king got soul 🙏 music legend"}
+{"source": "Let's go to a film festival.", "target": "film fest vibes? 🎬 lets binge cinema fr king/queen 🙏 movie quest"}
+{"source": "This salad is so crisp.", "target": "this salad snappin fresh fr 🥗 crisp king vibes 🙏 healthy elite"}
+{"source": "I'm trying to be more patient.", "target": "tryna stay chill fr 😌 patient king waitin calm 🙏 zen grind"}
+{"source": "She's very inspiring.", "target": "she sparkin dreams fr 🔥 inspiring queen lifts souls 🙏 motivation champ"}
+{"source": "I need to fix my lamp.", "target": "lamp actin shady fr 💡 gotta fix it king 🙏 bright vibes mission"}
+{"source": "He's really generous.", "target": "bro givin big fr 🎁 generous king got heart 🙏 selfless vibes"}
+{"source": "Let's go to a book signing.", "target": "book signin vibes? 📚 lets meet authors fr king/queen 🙏 literary quest"}
+{"source": "This cookie is so soft.", "target": "this cookie meltin soft fr 🍪 soft king vibes 🙏 snack heaven"}
+{"source": "I'm feeling hopeful.", "target": "hope hittin strong fr 🌟 hopeful king seein light 🙏 optimism overload"}
+{"source": "She's very empathetic.", "target": "she feelin all the feels fr 😔 empathetic queen got heart 🙏 emotional champ"}
+{"source": "I need to clean my desk.", "target": "desk lookin like a warzone fr 🖥️ gotta sort it king 🙏 tidy vibes mission"}
+{"source": "He's a great leader.", "target": "bro leadin like a king fr 👑 leader king inspires all 🙏 squad motivator"}
+{"source": "Let's go to a dance class.", "target": "dance class vibes? 💃 lets move our bodies fr king/queen 🙏 rhythm quest"}
+{"source": "This juice is so tangy.", "target": "this juice zappin my tongue fr 🥤 tangy af king 🙏 zesty vibes"}
+{"source": "I'm feeling energized.", "target": "energy on max fr ⚡ energized king ready to roll 🙏 power vibes"}
+{"source": "She's very creative.", "target": "she sparkin magic fr 🎨 creative queen got vision 🙏 imagination champ"}
+{"source": "I need to organize my files.", "target": "files lookin chaotic fr 📂 gotta sort em king 🙏 digital glow up"}
+{"source": "He's really reliable.", "target": "bro solid every time fr 💯 reliable king never flakes 🙏 trust legend"}
+{"source": "Let's go to a photography workshop.", "target": "photo workshop vibes? 📸 lets snap some shots fr king/queen 🙏 visual quest"}
+{"source": "This smoothie is so refreshing.", "target": "this smoothie hittin crisp fr 🥤 refreshin af king 🙏 liquid vibes"}
+{"source": "I'm trying to be more confident.", "target": "tryna own my vibe fr 😎 confident king risin up 🙏 self-assured grind"}
+{"source": "She's very supportive.", "target": "she holdin it down fr 🤝 supportive queen got ur back 🙏 ride or die vibes"}
+{"source": "I need to clean my earbuds.", "target": "earbuds lookin grimy fr 🎶 gotta clean em king 🙏 fresh audio vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a writing class.", "target": "writin class vibes? ✍️ lets craft some words fr king/queen 🙏 literary quest"}
+{"source": "This wrap is so savory.", "target": "this wrap hittin deep fr 🌯 savory king vibes 🙏 lunch elite"}
+{"source": "I'm feeling relaxed.", "target": "vibes all chill fr 😌 relaxed king in zen mode 🙏 stress-free vibes"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe queen"}
+{"source": "I need to fix my chair.", "target": "chair creakin loud fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really creative.", "target": "bro sparkin genius fr 🎨 creative king got vision 🙏 imagination god"}
+{"source": "Let's go to a pottery class.", "target": "pottery class vibes? 🏺 lets mold some art fr king/queen 🙏 creative escape"}
+{"source": "This latte is so smooth.", "target": "this latte slidin down fr ☕ smooth king vibes 🙏 coffee elite"}
+{"source": "I'm feeling motivated.", "target": "motivation on max fr 💥 motivated king ready to crush 🙏 grind mode on"}
+{"source": "She's very reliable.", "target": "she solid as a rock fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to clean my mousepad.", "target": "mousepad lookin grimy fr 🖱️ gotta clean it king 🙏 fresh tech vibes"}
+{"source": "He's a great musician.", "target": "bro droppin melodies fr 🎶 musician king got soul 🙏 music legend"}
+{"source": "Let's go to a film festival.", "target": "film fest vibes? 🎬 lets binge cinema fr king/queen 🙏 movie quest"}
+{"source": "This salad is so crisp.", "target": "this salad snappin fresh fr 🥗 crisp king vibes 🙏 healthy elite"}
+{"source": "I'm trying to be more patient.", "target": "tryna stay chill fr 😌 patient king waitin calm 🙏 zen grind"}
+{"source": "She's very inspiring.", "target": "she sparkin dreams fr 🔥 inspiring queen lifts souls 🙏 motivation champ"}
+{"source": "I need to fix my lamp.", "target": "lamp actin shady fr 💡 gotta fix it king 🙏 bright vibes mission"}
+{"source": "He's really generous.", "target": "bro givin big fr 🎁 generous king got heart 🙏 selfless vibes"}
+{"source": "Let's go to a book signing.", "target": "book signin vibes? 📚 lets meet authors fr king/queen 🙏 literary quest"}
+{"source": "This cookie is so soft.", "target": "this cookie meltin soft fr 🍪 soft king vibes 🙏 snack heaven"}
+{"source": "I'm feeling hopeful.", "target": "hope hittin strong fr 🌟 hopeful king seein light 🙏 optimism overload"}
+{"source": "She's very empathetic.", "target": "she feelin all the feels fr 😔 empathetic queen got heart 🙏 emotional champ"}
+{"source": "I need to clean my desk.", "target": "desk lookin like a warzone fr 🖥️ gotta sort it king 🙏 tidy vibes mission"}
+{"source": "He's a great leader.", "target": "bro leadin like a king fr 👑 leader king inspires all 🙏 squad motivator"}
+{"source": "Let's go to a dance class.", "target": "dance class vibes? 💃 lets move our bodies fr king/queen 🙏 rhythm quest"}
+{"source": "This juice is so tangy.", "target": "this juice zappin my tongue fr 🥤 tangy af king 🙏 zesty vibes"}
+{"source": "I'm feeling energized.", "target": "energy on max fr ⚡ energized king ready to roll 🙏 power vibes"}
+{"source": "She's very creative.", "target": "she sparkin magic fr 🎨 creative queen got vision 🙏 imagination champ"}
+{"source": "I need to organize my files.", "target": "files lookin chaotic fr 📂 gotta sort em king 🙏 digital glow up"}
+{"source": "He's really reliable.", "target": "bro solid every time fr 💯 reliable king never flakes 🙏 trust legend"}
+{"source": "Let's go to a photography workshop.", "target": "photo workshop vibes? 📸 lets snap some shots fr king/queen 🙏 visual quest"}
+{"source": "This smoothie is so refreshing.", "target": "this smoothie hittin crisp fr 🥤 refreshin af king 🙏 liquid vibes"}
+{"source": "I'm trying to be more confident.", "target": "tryna own my vibe fr 😎 confident king risin up 🙏 self-assured grind"}
+{"source": "She's very supportive.", "target": "she holdin it down fr 🤝 supportive queen got ur back 🙏 ride or die vibes"}
+{"source": "I need to clean my earbuds.", "target": "earbuds lookin grimy fr 🎶 gotta clean em king 🙏 fresh audio vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a writing class.", "target": "writin class vibes? ✍️ lets craft some words fr king/queen 🙏 literary quest"}
+{"source": "This wrap is so savory.", "target": "this wrap hittin deep fr 🌯 savory king vibes 🙏 lunch elite"}
+{"source": "I'm feeling relaxed.", "target": "vibes all chill fr 😌 relaxed king in zen mode 🙏 stress-free vibes"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe queen"}
+{"source": "I need to fix my chair.", "target": "chair creakin loud fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really creative.", "target": "bro sparkin genius fr 🎨 creative king got vision 🙏 imagination god"}
+{"source": "Let's go to a pottery class.", "target": "pottery class vibes? 🏺 lets mold some art fr king/queen 🙏 creative escape"}
+{"source": "This latte is so smooth.", "target": "this latte slidin down fr ☕ smooth king vibes 🙏 coffee elite"}
+{"source": "I'm feeling motivated.", "target": "motivation on max fr 💥 motivated king ready to crush 🙏 grind mode on"}
+{"source": "She's very reliable.", "target": "she solid as a rock fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to clean my mousepad.", "target": "mousepad lookin grimy fr 🖱️ gotta clean it king 🙏 fresh tech vibes"}
+{"source": "He's a great musician.", "target": "bro droppin melodies fr 🎶 musician king got soul 🙏 music legend"}
+{"source": "Let's go to a film festival.", "target": "film fest vibes? 🎬 lets binge cinema fr king/queen 🙏 movie quest"}
+{"source": "This salad is so crisp.", "target": "this salad snappin fresh fr 🥗 crisp king vibes 🙏 healthy elite"}
+{"source": "I'm trying to be more patient.", "target": "tryna stay chill fr 😌 patient king waitin calm 🙏 zen grind"}
+{"source": "She's very inspiring.", "target": "she sparkin dreams fr 🔥 inspiring queen lifts souls 🙏 motivation champ"}
+{"source": "I need to fix my lamp.", "target": "lamp actin shady fr 💡 gotta fix it king 🙏 bright vibes mission"}
+{"source": "He's really generous.", "target": "bro givin big fr 🎁 generous king got heart 🙏 selfless vibes"}
+{"source": "Let's go to a book signing.", "target": "book signin vibes? 📚 lets meet authors fr king/queen 🙏 literary quest"}
+{"source": "This cookie is so soft.", "target": "this cookie meltin soft fr 🍪 soft king vibes 🙏 snack heaven"}
+{"source": "I'm feeling hopeful.", "target": "hope hittin strong fr 🌟 hopeful king seein light 🙏 optimism overload"}
+{"source": "She's very empathetic.", "target": "she feelin all the feels fr 😔 empathetic queen got heart 🙏 emotional champ"}
+{"source": "I need to clean my desk.", "target": "desk lookin like a warzone fr 🖥️ gotta sort it king 🙏 tidy vibes mission"}
+{"source": "He's a great leader.", "target": "bro leadin like a king fr 👑 leader king inspires all 🙏 squad motivator"}
+{"source": "Let's go to a dance class.", "target": "dance class vibes? 💃 lets move our bodies fr king/queen 🙏 rhythm quest"}
+{"source": "This juice is so tangy.", "target": "this juice zappin my tongue fr 🥤 tangy af king 🙏 zesty vibes"}
+{"source": "I'm feeling energized.", "target": "energy on max fr ⚡ energized king ready to roll 🙏 power vibes"}
+{"source": "She's very creative.", "target": "she sparkin magic fr 🎨 creative queen got vision 🙏 imagination champ"}
+{"source": "I need to organize my files.", "target": "files lookin chaotic fr 📂 gotta sort em king 🙏 digital glow up"}
+{"source": "He's really reliable.", "target": "bro solid every time fr 💯 reliable king never flakes 🙏 trust legend"}
+{"source": "Let's go to a photography workshop.", "target": "photo workshop vibes? 📸 lets snap some shots fr king/queen 🙏 visual quest"}
+{"source": "This smoothie is so refreshing.", "target": "this smoothie hittin crisp fr 🥤 refreshin af king 🙏 liquid vibes"}
+{"source": "I'm trying to be more confident.", "target": "tryna own my vibe fr 😎 confident king risin up 🙏 self-assured grind"}
+{"source": "She's very supportive.", "target": "she holdin it down fr 🤝 supportive queen got ur back 🙏 ride or die vibes"}
+{"source": "I need to clean my earbuds.", "target": "earbuds lookin grimy fr 🎶 gotta clean em king 🙏 fresh audio vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a writing class.", "target": "writin class vibes? ✍️ lets craft some words fr king/queen 🙏 literary quest"}
+{"source": "This wrap is so savory.", "target": "this wrap hittin deep fr 🌯 savory king vibes 🙏 lunch elite"}
+{"source": "I'm feeling relaxed.", "target": "vibes all chill fr 😌 relaxed king in zen mode 🙏 stress-free vibes"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe queen"}
+{"source": "I need to fix my chair.", "target": "chair creakin loud fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really creative.", "target": "bro sparkin genius fr 🎨 creative king got vision 🙏 imagination god"}
+{"source": "Let's go to a pottery class.", "target": "pottery class vibes? 🏺 lets mold some art fr king/queen 🙏 creative escape"}
+{"source": "This latte is so smooth.", "target": "this latte slidin down fr ☕ smooth king vibes 🙏 coffee elite"}
+{"source": "I'm feeling motivated.", "target": "motivation on max fr 💥 motivated king ready to crush 🙏 grind mode on"}
+{"source": "She's very reliable.", "target": "she solid as a rock fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to clean my mousepad.", "target": "mousepad lookin grimy fr 🖱️ gotta clean it king 🙏 fresh tech vibes"}
+{"source": "He's a great musician.", "target": "bro droppin melodies fr 🎶 musician king got soul 🙏 music legend"}
+{"source": "Let's go to a film festival.", "target": "film fest vibes? 🎬 lets binge cinema fr king/queen 🙏 movie quest"}
+{"source": "This salad is so crisp.", "target": "this salad snappin fresh fr 🥗 crisp king vibes 🙏 healthy elite"}
+{"source": "I'm trying to be more patient.", "target": "tryna stay chill fr 😌 patient king waitin calm 🙏 zen grind"}
+{"source": "She's very inspiring.", "target": "she sparkin dreams fr 🔥 inspiring queen lifts souls 🙏 motivation champ"}
+{"source": "I need to fix my lamp.", "target": "lamp actin shady fr 💡 gotta fix it king 🙏 bright vibes mission"}
+{"source": "He's really generous.", "target": "bro givin big fr 🎁 generous king got heart 🙏 selfless vibes"}
+{"source": "Let's go to a book signing.", "target": "book signin vibes? 📚 lets meet authors fr king/queen 🙏 literary quest"}
+{"source": "This cookie is so soft.", "target": "this cookie meltin soft fr 🍪 soft king vibes 🙏 snack heaven"}
+{"source": "I'm feeling hopeful.", "target": "hope hittin strong fr 🌟 hopeful king seein light 🙏 optimism overload"}
+{"source": "She's very empathetic.", "target": "she feelin all the feels fr 😔 empathetic queen got heart 🙏 emotional champ"}
+{"source": "I need to clean my desk.", "target": "desk lookin like a warzone fr 🖥️ gotta sort it king 🙏 tidy vibes mission"}
+{"source": "He's a great leader.", "target": "bro leadin like a king fr 👑 leader king inspires all 🙏 squad motivator"}
+{"source": "Let's go to a dance class.", "target": "dance class vibes? 💃 lets move our bodies fr king/queen 🙏 rhythm quest"}
+{"source": "This juice is so tangy.", "target": "this juice zappin my tongue fr 🥤 tangy af king 🙏 zesty vibes"}
+{"source": "I'm feeling energized.", "target": "energy on max fr ⚡ energized king ready to roll 🙏 power vibes"}
+{"source": "She's very creative.", "target": "she sparkin magic fr 🎨 creative queen got vision 🙏 imagination champ"}
+{"source": "I need to organize my files.", "target": "files lookin chaotic fr 📂 gotta sort em king 🙏 digital glow up"}
+{"source": "He's really reliable.", "target": "bro solid every time fr 💯 reliable king never flakes 🙏 trust legend"}
+{"source": "Let's go to a photography workshop.", "target": "photo workshop vibes? 📸 lets snap some shots fr king/queen 🙏 visual quest"}
+{"source": "This smoothie is so refreshing.", "target": "this smoothie hittin crisp fr 🥤 refreshin af king 🙏 liquid vibes"}
+{"source": "I'm trying to be more confident.", "target": "tryna own my vibe fr 😎 confident king risin up 🙏 self-assured grind"}
+{"source": "She's very supportive.", "target": "she holdin it down fr 🤝 supportive queen got ur back 🙏 ride or die vibes"}
+{"source": "I need to clean my earbuds.", "target": "earbuds lookin grimy fr 🎶 gotta clean em king 🙏 fresh audio vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a writing class.", "target": "writin class vibes? ✍️ lets craft some words fr king/queen 🙏 literary quest"}
+{"source": "This wrap is so savory.", "target": "this wrap hittin deep fr 🌯 savory king vibes 🙏 lunch elite"}
+{"source": "I'm feeling relaxed.", "target": "vibes all chill fr 😌 relaxed king in zen mode 🙏 stress-free vibes"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe queen"}
+{"source": "I need to fix my chair.", "target": "chair creakin loud fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really creative.", "target": "bro sparkin genius fr 🎨 creative king got vision 🙏 imagination god"}
+{"source": "Let's go to a pottery class.", "target": "pottery class vibes? 🏺 lets mold some art fr king/queen 🙏 creative escape"}
+{"source": "This latte is so smooth.", "target": "this latte slidin down fr ☕ smooth king vibes 🙏 coffee elite"}
+{"source": "I'm feeling motivated.", "target": "motivation on max fr 💥 motivated king ready to crush 🙏 grind mode on"}
+{"source": "She's very reliable.", "target": "she solid as a rock fr 💯 reliable queen never flakes 🙏 trust champ"}
+{"source": "I need to clean my mousepad.", "target": "mousepad lookin grimy fr 🖱️ gotta clean it king 🙏 fresh tech vibes"}
+{"source": "He's a great musician.", "target": "bro droppin melodies fr 🎶 musician king got soul 🙏 music legend"}
+{"source": "Let's go to a film festival.", "target": "film fest vibes? 🎬 lets binge cinema fr king/queen 🙏 movie quest"}
+{"source": "This salad is so crisp.", "target": "this salad snappin fresh fr 🥗 crisp king vibes 🙏 healthy elite"}
+{"source": "I'm trying to be more patient.", "target": "tryna stay chill fr 😌 patient king waitin calm 🙏 zen grind"}
+{"source": "She's very inspiring.", "target": "she sparkin dreams fr 🔥 inspiring queen lifts souls 🙏 motivation champ"}
+{"source": "I need to fix my lamp.", "target": "lamp actin shady fr 💡 gotta fix it king 🙏 bright vibes mission"}
+{"source": "He's really generous.", "target": "bro givin big fr 🎁 generous king got heart 🙏 selfless vibes"}
+{"source": "Let's go to a book signing.", "target": "book signin vibes? 📚 lets meet authors fr king/queen 🙏 literary quest"}
+{"source": "This cookie is so soft.", "target": "this cookie meltin soft fr 🍪 soft king vibes 🙏 snack heaven"}
+{"source": "I'm feeling hopeful.", "target": "hope hittin strong fr 🌟 hopeful king seein light 🙏 optimism overload"}
+{"source": "She's very empathetic.", "target": "she feelin all the feels fr 😔 empathetic queen got heart 🙏 emotional champ"}
+{"source": "I need to clean my desk.", "target": "desk lookin like a warzone fr 🖥️ gotta sort it king 🙏 tidy vibes mission"}
+{"source": "He's a great leader.", "target": "bro leadin like a king fr 👑 leader king inspires all 🙏 squad motivator"}
+{"source": "Let's go to a dance class.", "target": "dance class vibes? 💃 lets move our bodies fr king/queen 🙏 rhythm quest"}
+{"source": "This juice is so tangy.", "target": "this juice zappin my tongue fr 🥤 tangy af king 🙏 zesty vibes"}
+{"source": "I'm feeling energized.", "target": "energy on max fr ⚡ energized king ready to roll 🙏 power vibes"}
+{"source": "She's very creative.", "target": "she sparkin magic fr 🎨 creative queen got vision 🙏 imagination champ"}
+{"source": "I need to organize my files.", "target": "files lookin chaotic fr 📂 gotta sort em king 🙏 digital glow up"}
+{"source": "He's really reliable.", "target": "bro solid every time fr 💯 reliable king never flakes 🙏 trust legend"}
+{"source": "Let's go to a photography workshop.", "target": "photo workshop vibes? 📸 lets snap some shots fr king/queen 🙏 visual quest"}
+{"source": "This smoothie is so refreshing.", "target": "this smoothie hittin crisp fr 🥤 refreshin af king 🙏 liquid vibes"}
+{"source": "I'm trying to be more confident.", "target": "tryna own my vibe fr 😎 confident king risin up 🙏 self-assured grind"}
+{"source": "She's very supportive.", "target": "she holdin it down fr 🤝 supportive queen got ur back 🙏 ride or die vibes"}
+{"source": "I need to clean my earbuds.", "target": "earbuds lookin grimy fr 🎶 gotta clean em king 🙏 fresh audio vibes"}
+{"source": "He's a great artist.", "target": "bro paintin bangers fr 🎨 artist king got style 🙏 aesthetic legend"}
+{"source": "Let's go to a writing class.", "target": "writin class vibes? ✍️ lets craft some words fr king/queen 🙏 literary quest"}
+{"source": "This wrap is so savory.", "target": "this wrap hittin deep fr 🌯 savory king vibes 🙏 lunch elite"}
+{"source": "I'm feeling relaxed.", "target": "vibes all chill fr 😌 relaxed king in zen mode 🙏 stress-free vibes"}
+{"source": "She's very charismatic.", "target": "she glowin with charm fr ✨ charismatic queen owns it 🙏 vibe queen"}
+{"source": "I need to fix my chair.", "target": "chair creakin loud fr 🪑 gotta fix it king 🙏 sturdy vibes mission"}
+{"source": "He's really creative.", "target": "bro sparkin genius fr 🎨 creative king got vision 🙏 imagination god"}
+{"source": "Let's go to a pottery class.", "target": "pottery class vibes? 🏺 lets mold some art fr king/queen 🙏 creative escape"}
