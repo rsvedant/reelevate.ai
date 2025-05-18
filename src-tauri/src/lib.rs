@@ -21,8 +21,6 @@ pub fn run() {
       llm::get_models,
       llm::download_model,
       llm::delete_model,
-      llm::tokenize,
-      llm::detokenize,
       llm::chat
     ])
     .run(tauri::generate_context!())

@@ -23,7 +23,7 @@ interface DownloadProgress {
   status?: string;
   total?: number;
   downloaded?: number;
-  error?: boolean;
+  error?: string;
   message?: string;
 }
 
@@ -57,7 +57,7 @@ const ReelLLMChat: React.FC = () => {
         setDownloading(false);
       }
       
-      if (status === 'completed') {
+      if (status?.startsWith('completed')) {
         setDownloading(false);
         setDownloadStatus('completed');
       }
@@ -346,4 +346,4 @@ const ReelLLMChat: React.FC = () => {
   );
 };
 
-export default ReelLLMChat; 
+export default ReelLLMChat;
