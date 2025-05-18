@@ -32,7 +32,7 @@ Before you begin, ensure you have the following installed on your system:
 
 1.  **Clone the repository (if you haven't already):**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/rsvedant/reelevate.ai
     cd reelevate.ai
     ```
 
