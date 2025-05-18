@@ -23,7 +23,7 @@ interface DownloadProgress {
   status?: string;
   total?: number;
   downloaded?: number;
-  error?: boolean;
+  error?: string;
   message?: string;
 }
 
