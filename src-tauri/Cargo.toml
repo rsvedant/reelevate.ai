@@ -23,10 +23,23 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.4.1", features = [] }
 tauri-plugin-log = "2.0.0-rc"
-llm = "1.2.3"
-tokenizers = "0.21.1"
+llama-cpp-2 = "0.1.81"
 anyhow = "1.0.79"
 thiserror = "1.0.56"
 tokio = { version = "1.32.0", features = ["full"] }
 reqwest = { version = "0.11.23", features = ["json"] }
 rand = "0.8.5"
+sentencepiece = "0.11.3"
+
+# Add a profile section at the end of the file
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true
+debug-assertions = false  # This can help avoid some assertion failures in C++ libraries

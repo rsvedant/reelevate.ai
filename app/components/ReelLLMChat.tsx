@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import ReactMarkdown from 'react-markdown';
+import { listen } from '@tauri-apps/api/event';
 
 interface LlmModel {
   name: string;
@@ -16,16 +17,63 @@ interface ChatMessage {
   content: string;
 }
 
+interface DownloadProgress {
+  progress: number;
+  modelName: string;
+  status?: string;
+  total?: number;
+  downloaded?: number;
+  error?: boolean;
+  message?: string;
+}
+
 const ReelLLMChat: React.FC = () => {
   const [models, setModels] = useState<LlmModel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedModel, setSelectedModel] = useState<LlmModel | null>(null);
   const [downloading, setDownloading] = useState<boolean>(false);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [downloadStatus, setDownloadStatus] = useState<string>('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState<string>('');
   const [thinking, setThinking] = useState<boolean>(false);
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const [deletingModelName, setDeletingModelName] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    // Set up event listeners for download progress
+    const unlisten = listen<DownloadProgress>('download-progress', (event) => {
+      const { progress, status, error, message } = event.payload;
+      
+      setDownloadProgress(progress);
+      
+      if (status) {
+        setDownloadStatus(status);
+      }
+      
+      if (error) {
+        alert(`Download error: ${message}`);
+        setDownloading(false);
+      }
+      
+      if (status === 'completed') {
+        setDownloading(false);
+        setDownloadStatus('completed');
+      }
+    });
+    
+    // Set up validation event listener
+    const unlistenValidation = listen<DownloadProgress>('validation-progress', (event) => {
+      const { progress } = event.payload;
+      setDownloadStatus(`Validating model: ${Math.floor(progress)}%`);
+    });
+    
+    return () => {
+      unlisten.then(unlistenFn => unlistenFn());
+      unlistenValidation.then(unlistenFn => unlistenFn());
+    };
+  }, []);
 
   useEffect(() => {
     // Fetch available models
@@ -52,16 +100,68 @@ const ReelLLMChat: React.FC = () => {
     setSelectedModel(model);
   };
 
+  const handleDeleteModel = async (modelName: string) => {
+    if (deleting) return;
+    
+    setDeleting(true);
+    setDeletingModelName(modelName);
+    try {
+      const result = await invoke('delete_model', {
+        modelName: modelName,
+      }) as string;
+      
+      console.log(result);
+      
+      // If we're deleting the selected model, clear selection
+      if (selectedModel?.name === modelName) {
+        setSelectedModel(null);
+      }
+      
+      // If we have messages and deleted the active model, clear the chat
+      if (messages.length > 0) {
+        setMessages([]);
+      }
+      
+      // Show success message
+      alert(`Model ${modelName} has been deleted.`);
+      
+    } catch (error) {
+      console.error('Failed to delete model:', error);
+      alert(`Error deleting model: ${error}`);
+    } finally {
+      setDeleting(false);
+      setDeletingModelName(null);
+    }
+  };
+
   const handleDownloadModel = async () => {
     if (!selectedModel) return;
 
     setDownloading(true);
+    setDownloadProgress(0);
+    setDownloadStatus('Starting download...');
+    
     try {
       const result = await invoke('download_model', {
         modelInfo: selectedModel,
       }) as string;
       
       console.log(result);
+      
+      // The "completed" status will be received via the event listener,
+      // which will set downloading to false and add the welcome message
+      
+    } catch (error) {
+      console.error('Failed to download model:', error);
+      alert(`Error downloading model: ${error}`);
+      setDownloading(false);
+      setDownloadStatus('');
+    }
+  };
+  
+  // Add welcome message when download completes
+  useEffect(() => {
+    if (downloadStatus === 'completed' && !thinking) {
       // Add welcome message after model is loaded
       setMessages([
         { 
@@ -69,12 +169,9 @@ const ReelLLMChat: React.FC = () => {
           content: "I'm ready to help you create your reel story! What theme or concept would you like to explore?" 
         }
       ]);
-    } catch (error) {
-      console.error('Failed to download model:', error);
-    } finally {
-      setDownloading(false);
+      setDownloadStatus('');
     }
-  };
+  }, [downloadStatus, thinking]);
 
   const handleSendMessage = async () => {
     if (!input.trim() || thinking) return;
@@ -113,6 +210,19 @@ const ReelLLMChat: React.FC = () => {
     }
   };
 
+  // Format bytes to a human-readable format
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  };
+
   return (
     <div className="flex flex-col w-full max-w-4xl bg-black text-white rounded-lg shadow-lg">
       {/* Model Selection */}
@@ -127,14 +237,32 @@ const ReelLLMChat: React.FC = () => {
               {models.map(model => (
                 <div 
                   key={model.name}
-                  className={`p-4 border rounded-lg cursor-pointer ${
+                  className={`p-4 border rounded-lg ${
                     selectedModel?.name === model.name ? 'border-blue-500 bg-blue-900' : 'border-gray-700'
                   }`}
-                  onClick={() => handleModelSelect(model)}
                 >
-                  <h3 className="font-medium">{model.name}</h3>
-                  <p className="text-sm text-gray-300 mt-1">{model.description}</p>
-                  <p className="text-xs text-gray-400 mt-2">Size: {model.size_mb} MB</p>
+                  <div className="flex justify-between items-start">
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => handleModelSelect(model)}
+                    >
+                      <h3 className="font-medium">{model.name}</h3>
+                      <p className="text-sm text-gray-300 mt-1">{model.description}</p>
+                      <p className="text-xs text-gray-400 mt-2">Size: {model.size_mb} MB</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Are you sure you want to delete ${model.name}?`)) {
+                          handleDeleteModel(model.name);
+                        }
+                      }}
+                      disabled={deleting}
+                      className="ml-2 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded disabled:bg-gray-700 disabled:cursor-not-allowed"
+                    >
+                      {deleting && deletingModelName === model.name ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -149,8 +277,17 @@ const ReelLLMChat: React.FC = () => {
           </button>
           
           {downloading && (
-            <div className="w-full bg-gray-700 rounded-full h-2.5 mt-4">
-              <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${downloadProgress}%` }}></div>
+            <div className="mt-4">
+              <div className="w-full bg-gray-700 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                  style={{ width: `${downloadProgress}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-xs mt-1 text-gray-400">
+                <span>{downloadStatus || 'Downloading...'}</span>
+                <span>{downloadProgress}%</span>
+              </div>
             </div>
           )}
         </div>
@@ -209,4 +346,4 @@ const ReelLLMChat: React.FC = () => {
   );
 };
 
-export default ReelLLMChat; 
+export default ReelLLMChat;

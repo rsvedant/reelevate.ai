@@ -1,0 +1,1 @@
+everytime you gotta check whether the rust code is working alright or not, use the command `bun tauri dev`.

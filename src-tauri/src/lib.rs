@@ -20,6 +20,7 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       llm::get_models,
       llm::download_model,
+      llm::delete_model,
       llm::chat
     ])
     .run(tauri::generate_context!())
