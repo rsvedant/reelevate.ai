@@ -3,7 +3,7 @@ use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::params::LlamaModelParams;
-use llama_cpp_2::model::LlamaModel;
+use llama_cpp_2::model::{LlamaModel, Special};
 use llama_cpp_2::token::data_array::LlamaTokenDataArray;
 use llama_cpp_2::token::LlamaToken;
 
@@ -15,6 +15,7 @@ use tokio::task;
 use std::io::Write;
 use std::fmt;
 use sentencepiece::SentencePieceProcessor;
+use std::num::NonZeroU32;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LlmModelInfo {
@@ -79,6 +80,13 @@ pub async fn get_models() -> Result<Vec<LlmModelInfo>, String> {
             url: "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf".to_string(),
             tokenizer_url: "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0/resolve/main/tokenizer.model".to_string(),
             description: "TinyLlama 1.1B Chat model - extremely fast, smaller model".to_string(),
+        },
+        LlmModelInfo {
+            name: "OpenCoder-1.5B-Instruct".to_string(),
+            size_mb: 1420,
+            url: "https://huggingface.co/lmstudio-community/OpenCoder-1.5B-Instruct-GGUF/resolve/main/OpenCoder-1.5B-Instruct-Q4_K_M.gguf".to_string(),
+            tokenizer_url: "https://huggingface.co/infly/OpenCoder-1.5B-Instruct/resolve/main/tokenizer.model".to_string(),
+            description: "OpenCoder 1.5B Instruct Chat model".to_string(),
         },
     ])
 }
@@ -338,8 +346,9 @@ pub async fn chat(
         let tokenizer = tokenizer_clone_for_task;
         let backend = LlamaBackend::init().map_err(|e| format!("Failed to initialize backend: {}", e))?;
 
-        // Create a context
-        let ctx_params = LlamaContextParams::default();
+        // Create a context with default parameters
+        let ctx_params = LlamaContextParams::default().with_n_ctx(NonZeroU32::new(2048));
+        
         let mut context = model.new_context(&backend, ctx_params)
             .map_err(|e| format!("Failed to create LlamaContext: {}", e))?;
 
@@ -361,21 +370,18 @@ pub async fn chat(
         
         // Convert SentencePiece token pieces to LlamaToken with additional validation
         let prompt_tokens: Vec<LlamaToken> = pieces.iter()
-            .filter_map(|piece| {
-                if piece.id >= 0 { // Ensure the ID is valid
-                    Some(LlamaToken::new(piece.id as i32))
-                } else {
-                    None
-                }
-            })
+            .map(|piece| LlamaToken::new(piece.id as i32)) // piece.id is u32, always >= 0
             .collect();
             
         if prompt_tokens.is_empty() {
             return Err("No valid tokens were generated from the input.".to_string());
         }
 
-        // Create a batch (llama-cpp-2 processes tokens in batches)
-        let mut batch = LlamaBatch::new(512, 0);
+        // Create a batch with sufficient space for both prompt and generation
+        let batch_size = prompt_tokens.len() + 256; // Add extra space for generated tokens
+        let mut batch = LlamaBatch::new(batch_size, 1);
+        
+        // Add the prompt tokens
         batch.add_sequence(&prompt_tokens, 0, false)
              .map_err(|e| format!("Failed to add tokens to batch: {}", e))?;
         
@@ -393,7 +399,7 @@ pub async fn chat(
                 break;
             }
 
-            // Sample the next token (using top_p sampling or similar)
+            // Sample the next token from the logits of the last token in the previously decoded batch
             let candidates = context.candidates_ith(batch.n_tokens() - 1);
             let token_data_array = LlamaTokenDataArray::from_iter(candidates, false);
             
@@ -409,30 +415,21 @@ pub async fn chat(
                 break;
             }
 
-            // Convert Llama token ID to string by decoding a single token
-            let token_id = token.0; // Extract the i32 value from LlamaToken
-            
-            // Use SentencePiece to decode this single token with error handling
-            // SentencePiece expects u32 token IDs, so we need to convert safely
-            let token_id_u32 = if token_id >= 0 {
-                token_id as u32 // Safe conversion for non-negative values
-            } else {
-                return Err(format!("Encountered negative token ID: {}", token_id));
-            };
-            
-            let piece = match tokenizer.decode_piece_ids(&[token_id_u32]) {
-                Ok(text) => text,
-                Err(e) => return Err(format!("Failed to decode token ID {}: {}", token_id, e))
+            // Convert Llama token ID to string using the model's own vocabulary
+            let token_id_for_error = token.0; // For error reporting
+            let piece = match model.token_to_str(token, Special::Tokenize) {
+                Ok(text_string) => text_string,
+                Err(e) => return Err(format!("Failed to decode token ID {} using model.token_to_str(): {}", token_id_for_error, e))
             };
             
             generated_text.push_str(&piece);
             
             // Prepare the next batch for the new token
-            batch.clear();
+            batch.clear(); // Clear the batch before adding the new token for incremental generation
             batch.add_sequence(&[token], 0, true)
                  .map_err(|e| format!("Failed to add new token to batch: {}", e))?;
-
-            // Decode the new token
+            
+            // Decode just the new token
             context.decode(&mut batch)
                 .map_err(|e| format!("Context decode error (token generation): {}", e))?;
             
