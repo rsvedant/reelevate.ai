@@ -59,7 +59,7 @@ const ReelLLMChat: React.FC = () => {
       
       if (status?.startsWith('completed')) {
         setDownloading(false);
-        setDownloadStatus(status);
+        setDownloadStatus('completed');
       }
     });
     
