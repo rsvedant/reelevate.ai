@@ -36,10 +36,9 @@ Before you begin, ensure you have the following installed on your system:
     cd reelevate.ai
     ```
 
-2.  **Install frontend dependencies (if applicable, navigate to the frontend directory if there is one):**
+2.  **Install frontend dependencies**
     ```bash
-    # Assuming your frontend is in the root or a specific directory like 'src-ui'
-    # bun install
+    bun install
     ```
     *(Note: Adjust the command based on your project structure if you have a separate frontend directory)*
 
@@ -57,7 +56,7 @@ Before you begin, ensure you have the following installed on your system:
     *   `src/llm.rs`: Handles Large Language Model interactions, including model downloading, loading, and inference.
     *   `src/main.rs`: Entry point for the Rust backend.
     *   `Cargo.toml`: Rust project manifest for the Tauri backend.
-*   *(Other directories like `src/` or `ui/` would contain frontend code - to be updated as project evolves)*
+*   *(Other directories like `src/` would contain frontend code - to be updated as project evolves)*
 
 ## Contributing
 
