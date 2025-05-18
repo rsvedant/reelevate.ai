@@ -166,7 +166,7 @@ const ReelLLMChat: React.FC = () => {
       setMessages([
         { 
           role: 'assistant', 
-          content: "I'm ready to help you create your reel story! What theme or concept would you like to explore?" 
+          content: "Hello vro ts pmo icl but I'm here to help you create your reel's story, waffle something up fast and let's cook something up quick." 
         }
       ]);
       setDownloadStatus('');
