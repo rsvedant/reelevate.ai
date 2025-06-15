@@ -5,6 +5,15 @@ export interface Message {
   timestamp: string
   pending?: boolean
   error?: boolean
+  system?: boolean
+}
+
+export interface Conversation {
+  id: string
+  title: string
+  messages: Message[]
+  createdAt: string
+  updatedAt: string
 }
 
 export interface ModelRecord {
