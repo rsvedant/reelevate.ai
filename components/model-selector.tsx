@@ -1,11 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { AVAILABLE_MODELS } from "@/lib/constants"
 
 interface ModelSelectorProps {
@@ -42,39 +39,29 @@ export default function ModelSelector({ onModelSelect }: ModelSelectorProps) {
   }
 
   return (
-    <div className="space-y-2">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" role="combobox" aria-expanded={open} className="w-80 justify-between">
-            <div className="flex flex-col items-start">
-              <span>{selectedModel.name}</span>
-              <span className="text-xs text-zinc-400">{selectedModel.size}</span>
+    <div className="space-y-3">
+      <div className="space-y-2">
+        {AVAILABLE_MODELS.map((model) => (
+          <div
+            key={model.id}
+            className={cn(
+              "p-3 rounded-lg border cursor-pointer transition-colors",
+              selectedModel.id === model.id
+                ? "border-purple-500 bg-purple-500/10"
+                : "border-zinc-700 bg-zinc-800 hover:bg-zinc-700",
+            )}
+            onClick={() => handleModelSelect(model.id)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="font-medium text-sm text-white">{model.name}</div>
+                <div className="text-xs text-zinc-400">{model.size}</div>
+              </div>
+              {selectedModel.id === model.id && <Check className="h-4 w-4 text-purple-500" />}
             </div>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 p-0">
-          <Command>
-            <CommandInput placeholder="Search models..." />
-            <CommandList>
-              <CommandEmpty>No model found.</CommandEmpty>
-              <CommandGroup>
-                {AVAILABLE_MODELS.map((model) => (
-                  <CommandItem key={model.id} value={model.id} onSelect={() => handleModelSelect(model.id)}>
-                    <Check
-                      className={cn("mr-2 h-4 w-4", selectedModel.id === model.id ? "opacity-100" : "opacity-0")}
-                    />
-                    <div className="flex flex-col">
-                      <span>{model.name}</span>
-                      <span className="text-xs text-zinc-400">{model.size}</span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+          </div>
+        ))}
+      </div>
       <p className="text-xs text-zinc-500 text-center">Choose a smaller model for faster loading</p>
     </div>
   )

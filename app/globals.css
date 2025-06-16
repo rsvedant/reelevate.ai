@@ -109,3 +109,17 @@
     transform: scale(1);
   }
 }
+
+/* Add these styles to ensure proper message container behavior */
+@layer utilities {
+  .message-container {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+  }
+
+  .chat-messages-container {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}

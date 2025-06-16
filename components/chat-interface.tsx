@@ -31,7 +31,11 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
     useModel()
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (messagesEndRef.current) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+      }, 100)
+    }
   }
 
   useEffect(() => {
@@ -194,7 +198,21 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
         updateMessages(conversation.messages.filter((m) => m.id !== messageId))
         break
       case "regenerate":
-        // TODO: Implement regenerate functionality
+        // Find the message and regenerate from the previous user message
+        const messageIndex = conversation.messages.findIndex((m) => m.id === messageId)
+        if (messageIndex > 0) {
+          const previousUserMessage = conversation.messages[messageIndex - 1]
+          if (previousUserMessage.role === "user") {
+            // Remove the AI message and regenerate
+            const messagesUpToUser = conversation.messages.slice(0, messageIndex)
+            updateMessages(messagesUpToUser)
+            sendMessage(previousUserMessage.content)
+          }
+        }
+        break
+      case "edit":
+        // TODO: Implement edit functionality
+        console.log("Edit functionality to be implemented")
         break
     }
   }
@@ -220,9 +238,9 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-b border-zinc-800 p-4">
+      <div className="border-b border-zinc-800 p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold">{conversation.title}</h1>
@@ -240,7 +258,7 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-2xl mx-auto space-y-6 w-full">
           {conversation.messages.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -263,7 +281,7 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-zinc-800 p-4">
+      <div className="border-t border-zinc-800 p-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="relative">

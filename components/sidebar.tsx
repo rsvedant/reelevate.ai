@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, MessageSquare, Trash2, Settings, FileText, MoreHorizontal } from "lucide-react"
+import { Plus, MessageSquare, Trash2, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { Conversation } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import SettingsDialog from "@/components/settings-dialog"
 
 interface SidebarProps {
   conversations: Conversation[]
@@ -14,6 +15,9 @@ interface SidebarProps {
   onSelectConversation: (id: string) => void
   onNewConversation: () => void
   onDeleteConversation: (id: string) => void
+  setConversations: (conversations: Conversation[]) => void
+  setActiveConversationId: (id: string | null) => void
+  onClearAllConversations: () => void
 }
 
 export default function Sidebar({
@@ -22,6 +26,9 @@ export default function Sidebar({
   onSelectConversation,
   onNewConversation,
   onDeleteConversation,
+  setConversations,
+  setActiveConversationId,
+  onClearAllConversations,
 }: SidebarProps) {
   const [hoveredConversation, setHoveredConversation] = useState<string | null>(null)
 
@@ -62,14 +69,35 @@ export default function Sidebar({
       {/* Navigation */}
       <div className="p-4 border-b border-zinc-800">
         <div className="space-y-2">
-          <Button variant="ghost" className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800">
-            <FileText className="w-4 h-4 mr-2" />
-            Prompts
-          </Button>
-          <Button variant="ghost" className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800">
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
+          <SettingsDialog
+            onClearAllData={onClearAllConversations}
+            onExportData={() => {
+              // Export conversations as JSON
+              const dataStr = JSON.stringify(conversations, null, 2)
+              const dataBlob = new Blob([dataStr], { type: "application/json" })
+              const url = URL.createObjectURL(dataBlob)
+              const link = document.createElement("a")
+              link.href = url
+              link.download = "reelevate-conversations.json"
+              link.click()
+              URL.revokeObjectURL(url)
+            }}
+            onImportData={(file) => {
+              // Import conversations from JSON file
+              const reader = new FileReader()
+              reader.onload = (e) => {
+                try {
+                  const importedData = JSON.parse(e.target?.result as string)
+                  if (Array.isArray(importedData)) {
+                    setConversations(importedData)
+                  }
+                } catch (error) {
+                  console.error("Error importing data:", error)
+                }
+              }
+              reader.readAsText(file)
+            }}
+          />
         </div>
       </div>
 

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import type { Message } from "@/lib/types"
 import { cn } from "@/lib/utils"
-import { Loader, Copy, RotateCcw, Trash2, MoreHorizontal, User, Bot } from "lucide-react"
+import { Loader, Copy, RotateCcw, Trash2, MoreHorizontal, User, Bot, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -32,7 +32,7 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
 
   return (
     <div
-      className={cn("group flex items-start space-x-4", isUser ? "flex-row-reverse space-x-reverse" : "")}
+      className={cn("group flex items-start space-x-4 w-full", isUser ? "flex-row-reverse space-x-reverse" : "")}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -47,12 +47,18 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
       </div>
 
       {/* Message Content */}
-      <div className={cn("flex-1 space-y-2", isUser ? "flex flex-col items-end" : "")}>
+      <div className={cn("flex-1 space-y-2 min-w-0 max-w-[calc(100%-4rem)]", isUser ? "flex flex-col items-end" : "")}>
         <div
           className={cn(
-            "rounded-2xl px-4 py-3 max-w-[80%]",
-            isUser ? "bg-purple-500 text-white" : "bg-zinc-800 text-zinc-100",
+            "rounded-2xl px-4 py-3 break-words hyphens-auto",
+            "max-w-full overflow-hidden",
+            isUser ? "bg-purple-500 text-white ml-auto" : "bg-zinc-800 text-zinc-100 mr-auto",
           )}
+          style={{
+            wordBreak: "break-word",
+            overflowWrap: "break-word",
+            maxWidth: isUser ? "85%" : "85%",
+          }}
         >
           <div className="whitespace-pre-wrap">{message.content}</div>
           {message.pending && (
@@ -92,20 +98,32 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
                   <MoreHorizontal className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align={isUser ? "end" : "start"}>
+              <DropdownMenuContent align={isUser ? "end" : "start"} className="w-48">
                 <DropdownMenuItem onClick={() => onAction("copy")}>
                   <Copy className="w-4 h-4 mr-2" />
-                  Copy
+                  Copy message
                 </DropdownMenuItem>
                 {!isUser && (
-                  <DropdownMenuItem onClick={() => onAction("regenerate")}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Regenerate
+                  <>
+                    <DropdownMenuItem onClick={() => onAction("regenerate")}>
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Regenerate response
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onAction("edit")}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit and resend
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {isUser && (
+                  <DropdownMenuItem onClick={() => onAction("edit")}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit message
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => onAction("delete")} className="text-red-400 focus:text-red-400">
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
+                  Delete message
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
