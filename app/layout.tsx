@@ -9,7 +9,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Reelevate.AI - Reel Ideas Generator",
   description: "Generate creative reel ideas with local AI",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -20,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Add meta tags for WebAssembly and worker support */}
+        <meta name="apple-mobile-web-app-title" content="Reelevate.AI" />
         <meta httpEquiv="Cross-Origin-Embedder-Policy" content="require-corp" />
         <meta httpEquiv="Cross-Origin-Opener-Policy" content="same-origin" />
       </head>

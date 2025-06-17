@@ -34,7 +34,7 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
   return (
     <div
       className={cn(
-        "group flex items-start space-x-4 w-full relative",
+        "group flex items-start space-x-3 w-full relative",
         isUser ? "flex-row-reverse space-x-reverse" : "",
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -43,90 +43,91 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
       {/* Avatar */}
       <div
         className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-          isUser ? "bg-purple-500" : "bg-zinc-700",
+          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
+          isUser ? "bg-gradient-to-br from-purple-500 to-purple-600" : "bg-zinc-700",
         )}
       >
         {isUser ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-zinc-300" />}
       </div>
 
       {/* Message Content */}
-      <div className={cn("flex-1 space-y-2 min-w-0 max-w-[calc(100%-4rem)]", isUser ? "flex flex-col items-end" : "")}>
-        <div className="relative">
-          <div
-            className={cn(
-              "rounded-2xl px-4 py-3 break-words hyphens-auto relative",
-              "max-w-full overflow-hidden",
-              isUser ? "bg-purple-500 text-white ml-auto" : "bg-zinc-800 text-zinc-100 mr-auto",
-            )}
-            style={{
-              wordBreak: "break-word",
-              overflowWrap: "break-word",
-              maxWidth: isUser ? "85%" : "85%",
-            }}
-          >
-            <div className="whitespace-pre-wrap pr-8">{message.content}</div>
-            {message.pending && (
-              <div className="flex items-center mt-2 text-zinc-400">
-                <Loader className="h-3 w-3 animate-spin mr-1" />
-                <span className="text-xs">Thinking...</span>
-              </div>
-            )}
-
-            {/* Message Actions - Positioned absolutely within the message bubble */}
-            {!message.pending && (
-              <div
-                className={cn(
-                  "absolute top-2 transition-opacity duration-200",
-                  isUser ? "left-2" : "right-2",
-                  isHovered || isDropdownOpen ? "opacity-100" : "opacity-0",
-                )}
-              >
-                <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-zinc-700/50 rounded-full">
-                      <MoreHorizontal className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align={isUser ? "start" : "end"} className="w-48">
-                    <DropdownMenuItem onClick={() => onAction("copy")}>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy message
-                    </DropdownMenuItem>
-                    {!isUser && (
-                      <>
-                        <DropdownMenuItem onClick={() => onAction("regenerate")}>
-                          <RotateCcw className="w-4 h-4 mr-2" />
-                          Regenerate response
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onAction("edit")}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit and resend
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    {isUser && (
-                      <DropdownMenuItem onClick={() => onAction("edit")}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit message
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={() => onAction("delete")} className="text-red-400 focus:text-red-400">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete message
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-          </div>
+      <div className={cn("flex-1 space-y-1 min-w-0 max-w-[calc(100%-5rem)]", isUser ? "flex flex-col items-end" : "")}>
+        <div
+          className={cn(
+            "rounded-2xl px-4 py-3 break-words hyphens-auto relative",
+            "max-w-full overflow-hidden",
+            isUser
+              ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg"
+              : "bg-zinc-800 text-zinc-100 border border-zinc-700/50",
+          )}
+          style={{
+            wordBreak: "break-word",
+            overflowWrap: "break-word",
+            maxWidth: "85%",
+          }}
+        >
+          <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+          {message.pending && (
+            <div className="flex items-center mt-3 text-zinc-400">
+              <Loader className="h-3 w-3 animate-spin mr-2" />
+              <span className="text-xs">Thinking...</span>
+            </div>
+          )}
         </div>
 
         {/* Timestamp */}
-        <div className={cn("text-xs text-zinc-500", isUser ? "text-right" : "text-left")}>
+        <div className={cn("text-xs text-zinc-500 px-1", isUser ? "text-right" : "text-left")}>
           {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </div>
       </div>
+
+      {/* Message Actions - Positioned outside the message bubble */}
+      {!message.pending && (
+        <div
+          className={cn(
+            "flex items-center transition-opacity duration-200 mt-1",
+            isUser ? "order-first mr-2" : "ml-2",
+            isHovered || isDropdownOpen ? "opacity-100" : "opacity-0",
+          )}
+        >
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 hover:bg-zinc-700/50 rounded-full border border-zinc-600/30"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={isUser ? "start" : "end"} className="w-48">
+              <DropdownMenuItem onClick={() => onAction("copy")}>
+                <Copy className="w-4 h-4 mr-2" />
+                Copy message
+              </DropdownMenuItem>
+
+              {isUser && (
+                <DropdownMenuItem onClick={() => onAction("edit")}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit message
+                </DropdownMenuItem>
+              )}
+
+              {!isUser && (
+                <DropdownMenuItem onClick={() => onAction("regenerate")}>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Regenerate response
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuItem onClick={() => onAction("delete")} className="text-red-400 focus:text-red-400">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete message
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
     </div>
   )
 }

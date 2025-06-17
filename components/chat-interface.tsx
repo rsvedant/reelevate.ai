@@ -6,7 +6,7 @@ import { useModel } from "@/hooks/use-model"
 import { v4 as uuidv4 } from "uuid"
 import type { Message, Conversation } from "@/lib/types"
 import { SYSTEM_PROMPT } from "@/lib/constants"
-import { Loader, Send, ChevronDown, Cpu } from "lucide-react"
+import { Loader, Send, ChevronDown, Cpu, Sparkles, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import ChatMessage from "@/components/chat-message"
@@ -32,7 +32,6 @@ export default function ChatInterface({
   const [showModelSelector, setShowModelSelector] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   const { model, loadModel, isModelLoaded, isModelLoading, progress, error, selectedModelRecord, switchModel } =
     useModel()
@@ -102,15 +101,12 @@ export default function ChatInterface({
       let accumulatedContent = ""
 
       if (streamingEnabled) {
-        // Streaming mode
         await model.chatCompletion(conversationHistory, {
           temperature: 0.7,
           max_tokens: 800,
           stream: true,
           callback: (chunk: string) => {
             accumulatedContent += chunk
-
-            // Update the AI message with accumulated content
             const updatedMessages = newMessages.map((msg, index) =>
               index === newMessages.length - 1 && msg.pending ? { ...msg, content: accumulatedContent } : msg,
             )
@@ -118,7 +114,6 @@ export default function ChatInterface({
           },
         })
       } else {
-        // Non-streaming mode
         accumulatedContent = await model.chatCompletion(conversationHistory, {
           temperature: 0.7,
           max_tokens: 800,
@@ -126,7 +121,6 @@ export default function ChatInterface({
         })
       }
 
-      // Remove pending state
       const finalMessages = newMessages.map((msg, index) =>
         index === newMessages.length - 1 && msg.pending ? { ...msg, pending: false, content: accumulatedContent } : msg,
       )
@@ -151,10 +145,8 @@ export default function ChatInterface({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!input.trim() || isGenerating || !isModelLoaded) return
 
-    // Create new conversation if none exists
     if (!conversation) {
       onNewConversation()
       return
@@ -162,7 +154,6 @@ export default function ChatInterface({
 
     const userMessage = input.trim()
     setInput("")
-
     await sendMessage(userMessage)
 
     if (textareaRef.current) {
@@ -179,7 +170,6 @@ export default function ChatInterface({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
-
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto"
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
@@ -205,12 +195,10 @@ export default function ChatInterface({
         updateMessages(conversation.messages.filter((m) => m.id !== messageId))
         break
       case "regenerate":
-        // Find the message and regenerate from the previous user message
         const messageIndex = conversation.messages.findIndex((m) => m.id === messageId)
         if (messageIndex > 0) {
           const previousUserMessage = conversation.messages[messageIndex - 1]
           if (previousUserMessage.role === "user") {
-            // Remove the AI message and regenerate
             const messagesUpToUser = conversation.messages.slice(0, messageIndex)
             updateMessages(messagesUpToUser)
             sendMessage(previousUserMessage.content)
@@ -218,7 +206,6 @@ export default function ChatInterface({
         }
         break
       case "edit":
-        // TODO: Implement edit functionality
         console.log("Edit functionality to be implemented")
         break
     }
@@ -226,17 +213,23 @@ export default function ChatInterface({
 
   if (!conversation) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto">
-            <Cpu className="w-8 h-8 text-white" />
+      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
+            <Sparkles className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-2xl font-semibold">Welcome to Reelevate.AI</h2>
-          <p className="text-zinc-400 max-w-md">
-            Get creative ideas for your next viral reel by chatting with our AI assistant. Start a new conversation to
-            begin.
-          </p>
-          <Button onClick={onNewConversation} className="bg-gradient-to-r from-purple-500 to-pink-500">
+          <div className="space-y-3">
+            <h2 className="text-3xl font-bold text-white">Welcome to Reelevate.AI</h2>
+            <p className="text-zinc-400 text-lg leading-relaxed">
+              Get creative ideas for your next viral reel by chatting with our AI assistant. Start a new conversation to
+              begin your creative journey.
+            </p>
+          </div>
+          <Button
+            onClick={onNewConversation}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 text-lg font-medium shadow-xl transition-all duration-200"
+          >
+            <Plus className="w-5 h-5 mr-2" />
             Start New Conversation
           </Button>
         </div>
@@ -245,17 +238,17 @@ export default function ChatInterface({
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden bg-zinc-900">
       {/* Header */}
-      <div className="border-b border-zinc-800 p-4 flex-shrink-0">
+      <div className="border-b border-zinc-800 p-4 flex-shrink-0 bg-zinc-900/50 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold">{conversation.title}</h1>
+            <h1 className="text-xl font-semibold text-white">{conversation.title}</h1>
             <p className="text-sm text-zinc-400">{conversation.messages.length} messages</p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             {selectedModelRecord && (
-              <Badge variant="secondary" className="bg-zinc-800 text-zinc-300">
+              <Badge variant="secondary" className="bg-zinc-800 text-zinc-300 border border-zinc-700">
                 {selectedModelRecord.name}
               </Badge>
             )}
@@ -264,15 +257,15 @@ export default function ChatInterface({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4" ref={messagesContainerRef}>
-        <div className="max-w-2xl mx-auto space-y-6 w-full">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-4xl mx-auto space-y-6 w-full">
           {conversation.messages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Cpu className="w-6 h-6 text-purple-500" />
+            <div className="text-center py-16">
+              <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-purple-500" />
               </div>
-              <h3 className="text-lg font-medium mb-2">Start a conversation</h3>
-              <p className="text-zinc-400 text-sm">Ask for reel ideas, creative concepts, or trending topics</p>
+              <h3 className="text-xl font-semibold mb-2 text-white">Start a conversation</h3>
+              <p className="text-zinc-400">Ask for reel ideas, creative concepts, or trending topics</p>
             </div>
           ) : (
             conversation.messages.map((message) => (
@@ -288,9 +281,9 @@ export default function ChatInterface({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-zinc-800 p-4 flex-shrink-0">
-        <div className="max-w-2xl mx-auto">
-          <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="border-t border-zinc-800 p-4 flex-shrink-0 bg-zinc-900/50 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
               <Textarea
                 ref={textareaRef}
@@ -298,13 +291,13 @@ export default function ChatInterface({
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
                 placeholder={isModelLoaded ? "Ask for reel ideas..." : "Please load a model first..."}
-                className="min-h-[60px] max-h-[200px] pr-12 resize-none bg-zinc-800 border-zinc-700 focus:border-purple-500"
+                className="min-h-[60px] max-h-[200px] pr-14 resize-none bg-zinc-800 border-zinc-700 focus:border-purple-500 rounded-xl text-white placeholder-zinc-400"
                 disabled={isGenerating || !isModelLoaded}
               />
               <Button
                 type="submit"
                 size="icon"
-                className="absolute right-2 bottom-2 h-8 w-8 bg-purple-500 hover:bg-purple-600"
+                className="absolute right-2 bottom-2 h-10 w-10 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-lg shadow-lg"
                 disabled={isGenerating || !input.trim() || !isModelLoaded}
               >
                 {isGenerating ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -319,7 +312,7 @@ export default function ChatInterface({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700"
+                      className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-white"
                       disabled={isModelLoading}
                     >
                       <Cpu className="w-4 h-4 mr-2" />
