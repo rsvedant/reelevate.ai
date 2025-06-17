@@ -18,14 +18,21 @@ interface ChatInterfaceProps {
   conversation?: Conversation
   onUpdateConversation: (conversationId: string, updates: Partial<Conversation>) => void
   onNewConversation: () => void
+  streamingEnabled: boolean
 }
 
-export default function ChatInterface({ conversation, onUpdateConversation, onNewConversation }: ChatInterfaceProps) {
+export default function ChatInterface({
+  conversation,
+  onUpdateConversation,
+  onNewConversation,
+  streamingEnabled,
+}: ChatInterfaceProps) {
   const [input, setInput] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [showModelSelector, setShowModelSelector] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   const { model, loadModel, isModelLoaded, isModelLoading, progress, error, selectedModelRecord, switchModel } =
     useModel()
@@ -46,11 +53,6 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
     if (conversation) {
       onUpdateConversation(conversation.id, { messages: newMessages })
     }
-  }
-
-  const generateTitle = (firstMessage: string) => {
-    // Generate a title from the first message (first 50 characters)
-    return firstMessage.length > 50 ? firstMessage.substring(0, 50) + "..." : firstMessage
   }
 
   const sendMessage = async (content: string) => {
@@ -77,11 +79,6 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
     const newMessages = [...conversation.messages, userMessage, aiMessage]
     updateMessages(newMessages)
 
-    // Update conversation title if it's the first message
-    if (conversation.messages.length === 0) {
-      onUpdateConversation(conversation.id, { title: generateTitle(content) })
-    }
-
     setIsGenerating(true)
 
     try {
@@ -104,20 +101,30 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
 
       let accumulatedContent = ""
 
-      await model.chatCompletion(conversationHistory, {
-        temperature: 0.7,
-        max_tokens: 800,
-        stream: true,
-        callback: (chunk: string) => {
-          accumulatedContent += chunk
+      if (streamingEnabled) {
+        // Streaming mode
+        await model.chatCompletion(conversationHistory, {
+          temperature: 0.7,
+          max_tokens: 800,
+          stream: true,
+          callback: (chunk: string) => {
+            accumulatedContent += chunk
 
-          // Update the AI message with accumulated content
-          const updatedMessages = newMessages.map((msg, index) =>
-            index === newMessages.length - 1 && msg.pending ? { ...msg, content: accumulatedContent } : msg,
-          )
-          updateMessages(updatedMessages)
-        },
-      })
+            // Update the AI message with accumulated content
+            const updatedMessages = newMessages.map((msg, index) =>
+              index === newMessages.length - 1 && msg.pending ? { ...msg, content: accumulatedContent } : msg,
+            )
+            updateMessages(updatedMessages)
+          },
+        })
+      } else {
+        // Non-streaming mode
+        accumulatedContent = await model.chatCompletion(conversationHistory, {
+          temperature: 0.7,
+          max_tokens: 800,
+          stream: false,
+        })
+      }
 
       // Remove pending state
       const finalMessages = newMessages.map((msg, index) =>
@@ -257,7 +264,7 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4" ref={messagesContainerRef}>
         <div className="max-w-2xl mx-auto space-y-6 w-full">
           {conversation.messages.length === 0 ? (
             <div className="text-center py-12">
@@ -282,7 +289,7 @@ export default function ChatInterface({ conversation, onUpdateConversation, onNe
 
       {/* Input Area */}
       <div className="border-t border-zinc-800 p-4 flex-shrink-0">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="relative">
               <Textarea

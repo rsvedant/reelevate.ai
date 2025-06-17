@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Settings, Download, Upload, Trash2, Moon, Sun, Monitor } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -16,12 +15,18 @@ interface SettingsDialogProps {
   onClearAllData: () => void
   onExportData: () => void
   onImportData: (file: File) => void
+  streamingEnabled: boolean
+  onStreamingChange: (enabled: boolean) => void
 }
 
-export default function SettingsDialog({ onClearAllData, onExportData, onImportData }: SettingsDialogProps) {
+export default function SettingsDialog({
+  onClearAllData,
+  onExportData,
+  onImportData,
+  streamingEnabled,
+  onStreamingChange,
+}: SettingsDialogProps) {
   const [open, setOpen] = useState(false)
-  const [autoSave, setAutoSave] = useState(true)
-  const [streamingEnabled, setStreamingEnabled] = useState(true)
   const { theme, setTheme } = useTheme()
 
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,22 +100,20 @@ export default function SettingsDialog({ onClearAllData, onExportData, onImportD
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="auto-save" className="text-sm text-zinc-300">
-                  Auto-save conversations
-                </Label>
-                <p className="text-xs text-zinc-500">Automatically save conversations to local storage</p>
-              </div>
-              <Switch id="auto-save" checked={autoSave} onCheckedChange={setAutoSave} />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
                 <Label htmlFor="streaming" className="text-sm text-zinc-300">
                   Streaming responses
                 </Label>
                 <p className="text-xs text-zinc-500">Show responses as they are generated</p>
               </div>
-              <Switch id="streaming" checked={streamingEnabled} onCheckedChange={setStreamingEnabled} />
+              <Switch id="streaming" checked={streamingEnabled} onCheckedChange={onStreamingChange} />
+            </div>
+
+            <div className="flex items-center justify-between opacity-50">
+              <div className="space-y-0.5">
+                <Label className="text-sm text-zinc-300">Auto-save conversations</Label>
+                <p className="text-xs text-zinc-500">Automatically save conversations (always enabled)</p>
+              </div>
+              <Switch checked={true} disabled />
             </div>
           </div>
 

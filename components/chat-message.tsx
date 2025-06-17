@@ -14,6 +14,7 @@ interface ChatMessageProps {
 
 export default function ChatMessage({ message, onAction }: ChatMessageProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const isUser = message.role === "user"
   const isSystem = message.system
 
@@ -32,7 +33,10 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
 
   return (
     <div
-      className={cn("group flex items-start space-x-4 w-full", isUser ? "flex-row-reverse space-x-reverse" : "")}
+      className={cn(
+        "group flex items-start space-x-4 w-full relative",
+        isUser ? "flex-row-reverse space-x-reverse" : "",
+      )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -48,87 +52,75 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
 
       {/* Message Content */}
       <div className={cn("flex-1 space-y-2 min-w-0 max-w-[calc(100%-4rem)]", isUser ? "flex flex-col items-end" : "")}>
-        <div
-          className={cn(
-            "rounded-2xl px-4 py-3 break-words hyphens-auto",
-            "max-w-full overflow-hidden",
-            isUser ? "bg-purple-500 text-white ml-auto" : "bg-zinc-800 text-zinc-100 mr-auto",
-          )}
-          style={{
-            wordBreak: "break-word",
-            overflowWrap: "break-word",
-            maxWidth: isUser ? "85%" : "85%",
-          }}
-        >
-          <div className="whitespace-pre-wrap">{message.content}</div>
-          {message.pending && (
-            <div className="flex items-center mt-2 text-zinc-400">
-              <Loader className="h-3 w-3 animate-spin mr-1" />
-              <span className="text-xs">Thinking...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Message Actions */}
-        {(isHovered || message.error) && !message.pending && (
-          <div className={cn("flex items-center space-x-1", isUser ? "justify-end" : "justify-start")}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-zinc-400 hover:text-zinc-200"
-              onClick={() => onAction("copy")}
-            >
-              <Copy className="w-3 h-3" />
-            </Button>
-
-            {!isUser && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-zinc-400 hover:text-zinc-200"
-                onClick={() => onAction("regenerate")}
-              >
-                <RotateCcw className="w-3 h-3" />
-              </Button>
+        <div className="relative">
+          <div
+            className={cn(
+              "rounded-2xl px-4 py-3 break-words hyphens-auto relative",
+              "max-w-full overflow-hidden",
+              isUser ? "bg-purple-500 text-white ml-auto" : "bg-zinc-800 text-zinc-100 mr-auto",
+            )}
+            style={{
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+              maxWidth: isUser ? "85%" : "85%",
+            }}
+          >
+            <div className="whitespace-pre-wrap pr-8">{message.content}</div>
+            {message.pending && (
+              <div className="flex items-center mt-2 text-zinc-400">
+                <Loader className="h-3 w-3 animate-spin mr-1" />
+                <span className="text-xs">Thinking...</span>
+              </div>
             )}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-zinc-400 hover:text-zinc-200">
-                  <MoreHorizontal className="w-3 h-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align={isUser ? "end" : "start"} className="w-48">
-                <DropdownMenuItem onClick={() => onAction("copy")}>
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy message
-                </DropdownMenuItem>
-                {!isUser && (
-                  <>
-                    <DropdownMenuItem onClick={() => onAction("regenerate")}>
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      Regenerate response
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onAction("edit")}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit and resend
-                    </DropdownMenuItem>
-                  </>
+            {/* Message Actions - Positioned absolutely within the message bubble */}
+            {!message.pending && (
+              <div
+                className={cn(
+                  "absolute top-2 transition-opacity duration-200",
+                  isUser ? "left-2" : "right-2",
+                  isHovered || isDropdownOpen ? "opacity-100" : "opacity-0",
                 )}
-                {isUser && (
-                  <DropdownMenuItem onClick={() => onAction("edit")}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit message
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => onAction("delete")} className="text-red-400 focus:text-red-400">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete message
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              >
+                <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-zinc-700/50 rounded-full">
+                      <MoreHorizontal className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align={isUser ? "start" : "end"} className="w-48">
+                    <DropdownMenuItem onClick={() => onAction("copy")}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy message
+                    </DropdownMenuItem>
+                    {!isUser && (
+                      <>
+                        <DropdownMenuItem onClick={() => onAction("regenerate")}>
+                          <RotateCcw className="w-4 h-4 mr-2" />
+                          Regenerate response
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onAction("edit")}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit and resend
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {isUser && (
+                      <DropdownMenuItem onClick={() => onAction("edit")}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit message
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => onAction("delete")} className="text-red-400 focus:text-red-400">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete message
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Timestamp */}
         <div className={cn("text-xs text-zinc-500", isUser ? "text-right" : "text-left")}>

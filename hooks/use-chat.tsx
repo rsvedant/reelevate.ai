@@ -1,51 +1,40 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import type { Message } from "@/lib/types"
-import { useIndexedDB } from "@/hooks/use-indexed-db"
 
-export function useChat() {
+// Simplified useChat hook that doesn't directly interact with IndexedDB
+// The chat-layout component handles all persistence
+export function useChat(conversationId?: string) {
   const [messages, setMessages] = useState<Message[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
-  const { saveMessages, loadMessages, clearAllMessages } = useIndexedDB()
 
-  // Load messages from IndexedDB on component mount
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const savedMessages = await loadMessages()
-        if (savedMessages && savedMessages.length > 0) {
-          setMessages(savedMessages)
-        }
-      } catch (error) {
-        console.error("Error loading messages:", error)
-      }
+  const addMessage = (role: "user" | "assistant" | "system", content: string, pending = false) => {
+    const newMessage: Message = {
+      id: crypto.randomUUID(),
+      role,
+      content,
+      timestamp: new Date().toISOString(),
+      pending,
     }
 
-    fetchMessages()
-  }, [loadMessages])
+    setMessages((prev) => [...prev, newMessage])
+    return newMessage
+  }
 
-  // Save messages to IndexedDB whenever they change
-  useEffect(() => {
-    if (messages.length > 0) {
-      saveMessages(messages).catch((error) => {
-        console.error("Error saving messages:", error)
-      })
-    }
-  }, [messages, saveMessages])
+  const updateMessage = (id: string, updates: Partial<Message>) => {
+    setMessages((prev) => prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg)))
+  }
 
-  const clearMessages = async () => {
-    try {
-      await clearAllMessages()
-      setMessages([])
-    } catch (error) {
-      console.error("Error clearing messages:", error)
-    }
+  const clearMessages = () => {
+    setMessages([])
   }
 
   return {
     messages,
     setMessages,
+    addMessage,
+    updateMessage,
     clearMessages,
     isGenerating,
     setIsGenerating,

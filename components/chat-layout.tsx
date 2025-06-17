@@ -11,18 +11,44 @@ export default function ChatLayout() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [streamingEnabled, setStreamingEnabled] = useState(true)
 
-  const { saveConversation, loadConversations, deleteConversation, clearAllConversations } = useIndexedDB()
+  const { saveConversation, loadConversations, deleteConversation, clearAllConversations, isReady } = useIndexedDB()
 
-  // Load conversations from IndexedDB on mount
+  // Load settings from localStorage
+  useEffect(() => {
+    const savedStreamingEnabled = localStorage.getItem("streamingEnabled")
+    if (savedStreamingEnabled !== null) {
+      setStreamingEnabled(JSON.parse(savedStreamingEnabled))
+    }
+  }, [])
+
+  // Save streaming setting to localStorage
+  const handleStreamingChange = (enabled: boolean) => {
+    setStreamingEnabled(enabled)
+    localStorage.setItem("streamingEnabled", JSON.stringify(enabled))
+  }
+
+  // Load conversations from IndexedDB when database is ready
   useEffect(() => {
     const loadSavedConversations = async () => {
+      if (!isReady) {
+        console.log("Database not ready yet, waiting...")
+        return
+      }
+
+      console.log("Database is ready, loading conversations...")
+      setIsLoading(true)
+
       try {
         const savedConversations = await loadConversations()
+        console.log("Loaded conversations:", savedConversations)
+
         if (savedConversations && savedConversations.length > 0) {
           setConversations(savedConversations)
-          // Optionally set the most recent conversation as active
-          // setActiveConversationId(savedConversations[0].id)
+          console.log("Set conversations in state:", savedConversations.length)
+        } else {
+          console.log("No saved conversations found")
         }
       } catch (error) {
         console.error("Error loading conversations:", error)
@@ -32,9 +58,9 @@ export default function ChatLayout() {
     }
 
     loadSavedConversations()
-  }, [loadConversations])
+  }, [isReady, loadConversations])
 
-  const createNewConversation = () => {
+  const createNewConversation = async () => {
     const newConversation: Conversation = {
       id: uuidv4(),
       title: "New Conversation",
@@ -43,25 +69,53 @@ export default function ChatLayout() {
       updatedAt: new Date().toISOString(),
     }
 
+    console.log("Creating new conversation:", newConversation.id)
     setConversations((prev) => [newConversation, ...prev])
     setActiveConversationId(newConversation.id)
 
     // Save to IndexedDB
-    saveConversation(newConversation).catch((error) => {
+    try {
+      await saveConversation(newConversation)
+      console.log("New conversation saved to IndexedDB")
+    } catch (error) {
       console.error("Error saving new conversation:", error)
-    })
+    }
+  }
+
+  const generateConversationTitle = (firstUserMessage: string, firstAiResponse: string) => {
+    // Use the first user message to generate a title, but make it more concise
+    const userMessageWords = firstUserMessage.trim().split(" ")
+    if (userMessageWords.length <= 6) {
+      return firstUserMessage
+    }
+    return userMessageWords.slice(0, 6).join(" ") + "..."
   }
 
   const updateConversation = async (conversationId: string, updates: Partial<Conversation>) => {
-    const updatedConversations = conversations.map((conv) =>
-      conv.id === conversationId
-        ? {
-            ...conv,
-            ...updates,
-            updatedAt: new Date().toISOString(),
+    console.log("Updating conversation:", conversationId, updates)
+
+    const updatedConversations = conversations.map((conv) => {
+      if (conv.id === conversationId) {
+        const updatedConv = {
+          ...conv,
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        }
+
+        // Auto-generate title after first AI response
+        if (updates.messages && updates.messages.length >= 2 && conv.title === "New Conversation") {
+          const userMessage = updates.messages.find((m) => m.role === "user")
+          const aiMessage = updates.messages.find((m) => m.role === "assistant" && !m.pending)
+
+          if (userMessage && aiMessage) {
+            updatedConv.title = generateConversationTitle(userMessage.content, aiMessage.content)
           }
-        : conv,
-    )
+        }
+
+        return updatedConv
+      }
+      return conv
+    })
 
     setConversations(updatedConversations)
 
@@ -70,6 +124,7 @@ export default function ChatLayout() {
     if (updatedConversation) {
       try {
         await saveConversation(updatedConversation)
+        console.log("Conversation updated in IndexedDB")
       } catch (error) {
         console.error("Error saving conversation:", error)
       }
@@ -83,6 +138,7 @@ export default function ChatLayout() {
       if (activeConversationId === conversationId) {
         setActiveConversationId(null)
       }
+      console.log("Conversation deleted:", conversationId)
     } catch (error) {
       console.error("Error deleting conversation:", error)
     }
@@ -93,6 +149,7 @@ export default function ChatLayout() {
       await clearAllConversations()
       setConversations([])
       setActiveConversationId(null)
+      console.log("All conversations cleared")
     } catch (error) {
       console.error("Error clearing conversations:", error)
     }
@@ -122,12 +179,15 @@ export default function ChatLayout() {
         setConversations={setConversations}
         setActiveConversationId={setActiveConversationId}
         onClearAllConversations={handleClearAllConversations}
+        streamingEnabled={streamingEnabled}
+        onStreamingChange={handleStreamingChange}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <ChatInterface
           conversation={activeConversation}
           onUpdateConversation={updateConversation}
           onNewConversation={createNewConversation}
+          streamingEnabled={streamingEnabled}
         />
       </div>
     </div>

@@ -18,6 +18,8 @@ interface SidebarProps {
   setConversations: (conversations: Conversation[]) => void
   setActiveConversationId: (id: string | null) => void
   onClearAllConversations: () => void
+  streamingEnabled: boolean
+  onStreamingChange: (enabled: boolean) => void
 }
 
 export default function Sidebar({
@@ -29,6 +31,8 @@ export default function Sidebar({
   setConversations,
   setActiveConversationId,
   onClearAllConversations,
+  streamingEnabled,
+  onStreamingChange,
 }: SidebarProps) {
   const [hoveredConversation, setHoveredConversation] = useState<string | null>(null)
 
@@ -97,6 +101,8 @@ export default function Sidebar({
               }
               reader.readAsText(file)
             }}
+            streamingEnabled={streamingEnabled}
+            onStreamingChange={onStreamingChange}
           />
         </div>
       </div>
