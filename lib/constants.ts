@@ -1,7 +1,12 @@
 import type { ModelRecord } from "./types"
 
-// Available models from MLC AI WebLLM - using correct model IDs
 export const AVAILABLE_MODELS: ModelRecord[] = [
+  {
+    id: "https://huggingface.co/pr0methium/ReelevateLM-q4f16_1",
+    name: "Reelevate Brainrot Chat (8B)",
+    model: "ReelevateLM-q4f16_1",
+    size: "~6GB",
+  },
   {
     id: "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC",
     name: "TinyLlama Chat (1.1B)",
@@ -22,7 +27,6 @@ export const AVAILABLE_MODELS: ModelRecord[] = [
   },
 ]
 
-// System prompt for reel ideas generation
 export const SYSTEM_PROMPT = `You are an AI assistant for Reelevate.AI, a platform that helps content creators generate ideas for social media reels. 
 Your goal is to help users brainstorm creative, engaging, and trending reel ideas.
 Be concise, creative, and provide specific ideas that would work well as short-form video content.
