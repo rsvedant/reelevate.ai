@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import type { ModelRecord, WebLLMModel } from "@/lib/types"
 import { AVAILABLE_MODELS } from "@/lib/constants"
+import type * as WebLLMTypes from "@mlc-ai/web-llm"
 
 export function useModel() {
   const [model, setModel] = useState<WebLLMModel | null>(null)
@@ -12,28 +13,68 @@ export function useModel() {
   const [error, setError] = useState<string | null>(null)
   const [selectedModelRecord, setSelectedModelRecord] = useState<ModelRecord | null>(null)
 
-  // Initialize WebLLM when the component mounts
+  const webllmRef = useRef<typeof import("@mlc-ai/web-llm") | null>(null)
+  const engineRef = useRef<WebLLMTypes.MLCEngine | null>(null)
+  const isLoadingCancelledRef = useRef(false)
+
+  const ensureWebLLMLoaded = async (): Promise<typeof import("@mlc-ai/web-llm")> => {
+    if (webllmRef.current) return webllmRef.current
+    if (typeof window === "undefined") throw new Error("WebLLM can only run in a browser environment")
+    const webllmModule = await import("@mlc-ai/web-llm")
+    webllmRef.current = webllmModule
+    if (!webllmModule.CreateMLCEngine) throw new Error("WebLLM CreateMLCEngine function not available")
+    return webllmModule
+  }
+
   useEffect(() => {
     const initWebLLM = async () => {
       try {
-        // Check if there's a previously selected model in localStorage
+        await ensureWebLLMLoaded()
         const savedModelId = localStorage.getItem("selectedModelId")
         if (savedModelId) {
           const modelToUse = AVAILABLE_MODELS.find((m) => m.id === savedModelId)
           if (modelToUse) {
             setSelectedModelRecord(modelToUse)
-            // Auto-load the saved model
             loadModelById(savedModelId)
           }
         }
       } catch (err) {
-        console.error("Error initializing WebLLM:", err)
         setError("Failed to initialize WebLLM")
       }
     }
-
     initWebLLM()
   }, [])
+
+  const isCustomModelUrl = (modelId: string): boolean => {
+    return modelId.startsWith("http://") || modelId.startsWith("https://")
+  }
+
+  const createCustomModelConfig = async (modelRecord: ModelRecord) => {
+    const webllm = await ensureWebLLMLoaded()
+    return {
+      model: modelRecord.id,
+      model_id: modelRecord.model,
+      model_lib: webllm.modelLibURLPrefix + webllm.modelVersion + "Llama-3_1-8B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm",
+    }
+  }
+
+  const createAppConfig = (modelRecord: ModelRecord) => {
+    const appConfig = {
+      useIndexedDB: true,
+      model_list: [] as any[],
+    }
+    if (isCustomModelUrl(modelRecord.id)) {
+      appConfig.model_list.push({
+        model_id: modelRecord.model,
+        model_url: modelRecord.id,
+        vram_required_MB: 8192,
+        low_resource_required: false,
+      })
+    } else {
+      appConfig.model_list.push({ model_id: modelRecord.model })
+    }
+    return appConfig
+  }
 
   const loadModelById = useCallback(
     async (modelId: string) => {
@@ -48,62 +89,74 @@ export function useModel() {
       setProgress(0)
       setError(null)
       setIsModelLoaded(false)
+      isLoadingCancelledRef.current = false
 
       try {
-        // Check if we're in a browser environment
-        if (typeof window === "undefined") {
-          throw new Error("WebLLM can only run in a browser environment")
+        const webllm = await ensureWebLLMLoaded()
+        const isCustomModel = isCustomModelUrl(modelRecord.id)
+
+        if (engineRef.current) {
+          await engineRef.current.unload()
+          engineRef.current = null
         }
 
-        // Dynamically import WebLLM with error handling
-        let webllmModule
+        let engine
         try {
-          webllmModule = await import("@mlc-ai/web-llm")
-          console.log("WebLLM module loaded:", Object.keys(webllmModule))
-        } catch (importError) {
-          console.error("Failed to import WebLLM:", importError)
-          throw new Error("Failed to load WebLLM library. Please refresh the page and try again.")
-        }
+          if (isCustomModel) {
+            const modelConfig = await createCustomModelConfig(modelRecord)
+            const appConfig = { model_list: [modelConfig] }
 
-        // Check if the required functions exist
-        if (!webllmModule.CreateMLCEngine) {
-          throw new Error("WebLLM CreateMLCEngine function not available")
-        }
-
-        console.log("Creating WebLLM engine for model:", modelRecord.model)
-
-        // Dispose of existing model if any
-        if (model?.engine) {
-          try {
-            await model.engine.dispose()
-          } catch (disposeError) {
-            console.warn("Error disposing previous model:", disposeError)
+            engine = await webllm.CreateMLCEngine(modelRecord.model, {
+              appConfig,
+              initProgressCallback: (report: any) => {
+                if (isLoadingCancelledRef.current) {
+                  setIsModelLoading(false)
+                  setProgress(0)
+                  setError("Model loading cancelled by user.")
+                  throw new Error("Model loading cancelled by user.")
+                }
+                if (report && typeof report.progress === "number") {
+                  setProgress(Math.max(0, Math.min(1, report.progress)))
+                }
+              },
+            })
+          } else {
+            const appConfig = createAppConfig(modelRecord)
+            const engineOptions = {
+              appConfig,
+              initProgressCallback: (report: any) => {
+                if (isLoadingCancelledRef.current) {
+                  setIsModelLoading(false)
+                  setProgress(0)
+                  setError("Model loading cancelled by user.")
+                  throw new Error("Model loading cancelled by user.")
+                }
+                if (report && typeof report.progress === "number") {
+                  setProgress(Math.max(0, Math.min(1, report.progress)))
+                }
+              },
+            }
+            engine = await webllm.CreateMLCEngine(modelRecord.model, engineOptions)
+          }
+        } catch (engineError: any) {
+          if (!isLoadingCancelledRef.current) {
+            if (isCustomModel) {
+              setError(`Custom model loading failed: ${engineError.message || "Unknown error"}. Please ensure the model URL is correct and the model is compatible with WebLLM.`)
+              throw new Error(`Custom model loading failed: ${engineError.message || "Unknown error"}. Please ensure the model URL is correct and the model is compatible with WebLLM.`)
+            } else {
+              setError(`Model loading failed: ${engineError.message || "Unknown error"}`)
+              throw new Error(`Model loading failed: ${engineError.message || "Unknown error"}`)
+            }
           }
         }
 
-        // Create engine with comprehensive error handling
-        let engine
-        try {
-          engine = await webllmModule.CreateMLCEngine(modelRecord.model, {
-            initProgressCallback: (report: any) => {
-              console.log("Loading progress:", report)
-              if (report && typeof report.progress === "number") {
-                setProgress(Math.max(0, Math.min(1, report.progress)))
-              }
-            },
-          })
-        } catch (engineError: any) {
-          console.error("Engine creation failed:", engineError)
-          throw new Error(`Model loading failed: ${engineError.message || "Unknown error"}`)
+        if (isLoadingCancelledRef.current || !engine) {
+          if (engine) await engine.unload()
+          return
         }
 
-        if (!engine) {
-          throw new Error("Failed to create WebLLM engine")
-        }
+        engineRef.current = engine
 
-        console.log("WebLLM engine created successfully")
-
-        // Create a wrapper object that matches our interface
         const modelWrapper: WebLLMModel = {
           engine,
           name: modelRecord.name,
@@ -114,11 +167,7 @@ export function useModel() {
                 throw new Error("Model engine not properly initialized")
               }
 
-              console.log("Starting chat completion with messages:", messages)
-
               let fullResponse = ""
-
-              // Convert messages to the format expected by WebLLM
               const formattedMessages = messages.map((msg) => ({
                 role: msg.role,
                 content: msg.content,
@@ -131,55 +180,40 @@ export function useModel() {
                 stream: options.stream || false,
               }
 
-              console.log("Completion options:", completionOptions)
-
               if (options.stream && options.callback) {
-                // Handle streaming response
                 try {
-                  console.log("Starting streaming completion")
                   const completion = await engine.chat.completions.create({
                     ...completionOptions,
                     stream: true,
                   })
 
-                  console.log("Streaming completion created, processing chunks")
                   for await (const chunk of completion) {
                     const content = chunk.choices?.[0]?.delta?.content || ""
                     if (content) {
-                      console.log("Received chunk:", content)
                       fullResponse += content
                       options.callback(content)
                     }
                   }
-                  console.log("Streaming completed, full response:", fullResponse)
                 } catch (streamError) {
-                  console.error("Streaming error, falling back to non-streaming:", streamError)
-                  // Fallback to non-streaming if streaming fails
                   const completion = await engine.chat.completions.create({
                     ...completionOptions,
                     stream: false,
                   })
                   fullResponse = completion.choices?.[0]?.message?.content || ""
-                  console.log("Non-streaming fallback response:", fullResponse)
                   if (fullResponse && options.callback) {
-                    // Simulate streaming by sending the full response
                     options.callback(fullResponse)
                   }
                 }
               } else {
-                // Handle non-streaming response
-                console.log("Starting non-streaming completion")
                 const completion = await engine.chat.completions.create({
                   ...completionOptions,
                   stream: false,
                 })
                 fullResponse = completion.choices?.[0]?.message?.content || ""
-                console.log("Non-streaming response:", fullResponse)
               }
 
               return fullResponse
             } catch (chatError: any) {
-              console.error("Error in chat completion:", chatError)
               throw new Error(`Chat failed: ${chatError.message || "Unknown error"}`)
             }
           },
@@ -188,16 +222,15 @@ export function useModel() {
         setModel(modelWrapper)
         setIsModelLoaded(true)
         setProgress(1)
-
-        // Save the selected model to localStorage
         localStorage.setItem("selectedModelId", modelRecord.id)
-
-        console.log("Model loaded successfully:", modelRecord.name)
       } catch (err: any) {
-        console.error("Error loading model:", err)
-        setError(err.message || "Failed to load model. Please try again.")
+        if (!isLoadingCancelledRef.current) {
+          setError(err.message || "Failed to load model. Please try again.")
+        }
       } finally {
-        setIsModelLoading(false)
+        if (!isLoadingCancelledRef.current) {
+          setIsModelLoading(false)
+        }
       }
     },
     [model],
@@ -209,18 +242,34 @@ export function useModel() {
     }
   }, [selectedModelRecord, loadModelById])
 
-  const switchModel = useCallback(
-    async (modelId: string) => {
-      console.log("Switching to model:", modelId)
-      await loadModelById(modelId)
-    },
-    [loadModelById],
-  )
+  const switchModel = useCallback(async (modelId: string) => {
+    await loadModelById(modelId)
+  }, [loadModelById])
+
+  const clearModelCache = useCallback(async () => {
+    try {
+      if ("indexedDB" in window) {
+        const databases = await indexedDB.databases()
+        const webllmDbs = databases.filter((db) => db.name?.includes("webllm") || db.name?.includes("mlc"))
+
+        for (const db of webllmDbs) {
+          if (db.name) {
+            const deleteReq = indexedDB.deleteDatabase(db.name)
+            await new Promise((resolve, reject) => {
+              deleteReq.onsuccess = () => resolve(true)
+              deleteReq.onerror = () => reject(deleteReq.error)
+            })
+          }
+        }
+      }
+    } catch (error) {}
+  }, [])
 
   return {
     model,
     loadModel,
     switchModel,
+    clearModelCache,
     isModelLoaded,
     isModelLoading,
     progress,
