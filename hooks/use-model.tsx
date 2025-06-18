@@ -54,7 +54,7 @@ export function useModel() {
     return {
       model: modelRecord.id,
       model_id: modelRecord.model,
-      model_lib: webllm.modelLibURLPrefix + webllm.modelVersion + "Llama-3_1-8B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm",
+      model_lib: webllm.modelLibURLPrefix + webllm.modelVersion + "/Llama-3_1-8B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm",
     }
   }
 
