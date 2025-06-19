@@ -1,12 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, use } from "react"
 import { useModel } from "@/hooks/use-model"
+import { toast } from "@/hooks/use-toast"
 import { v4 as uuidv4 } from "uuid"
 import type { Message, Conversation } from "@/lib/types"
 import { SYSTEM_PROMPT } from "@/lib/constants"
-import { Loader, Send, ChevronDown, Cpu, Sparkles, Plus } from "lucide-react"
+import { Loader, Send, ChevronDown, Cpu, Sparkles, Plus, StopCircle, StickyNoteIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import ChatMessage from "@/components/chat-message"
@@ -33,8 +34,17 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const { model, loadModel, isModelLoaded, isModelLoading, progress, error, selectedModelRecord, switchModel } =
-    useModel()
+  const {
+    model,
+    isModelLoaded,
+    isModelLoading,
+    progress,
+    setError,
+    error,
+    selectedModelRecord,
+    switchModel,
+    stop,
+  } = useModel()
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -48,6 +58,16 @@ export default function ChatInterface({
     scrollToBottom()
   }, [conversation?.messages])
 
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "🔔",
+        description: error,
+        variant: "default",
+      })
+    }
+  }, [error])
+
   const updateMessages = (newMessages: Message[]) => {
     if (conversation) {
       onUpdateConversation(conversation.id, { messages: newMessages })
@@ -57,6 +77,7 @@ export default function ChatInterface({
   const sendMessage = async (content: string) => {
     if (!isModelLoaded || !model || !conversation) {
       console.error("Model not loaded or no active conversation")
+      setError("Model not loaded or no active conversation")
       return
     }
 
@@ -126,20 +147,37 @@ export default function ChatInterface({
       )
       updateMessages(finalMessages)
     } catch (error) {
+      setError(`Error generating response: ${error}`)
       console.error("Error generating response:", error)
+
+      const errorMessageContent =
+        error instanceof Error &&
+        (error.message.toLowerCase().includes("interrupted") || error.message.toLowerCase().includes("cancelled"))
+          ? "Generation stopped."
+          : "Sorry, I encountered an error while generating a response. Please try again."
+
       const errorMessages = newMessages.map((msg, index) =>
         index === newMessages.length - 1 && msg.pending
           ? {
               ...msg,
-              content: "Sorry, I encountered an error while generating a response. Please try again.",
+              content: errorMessageContent,
               pending: false,
-              error: true,
+              error: errorMessageContent === "Generation stopped." ? false : true,
             }
           : msg,
       )
       updateMessages(errorMessages)
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  const handleStop = () => {
+    if (isGenerating || isModelLoading) {
+      stop()
+      if (isGenerating) {
+        setIsGenerating(false)
+      }
     }
   }
 
@@ -291,17 +329,28 @@ export default function ChatInterface({
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
                 placeholder={isModelLoaded ? "Ask for reel ideas..." : "Please load a model first..."}
-                className="min-h-[60px] max-h-[200px] pr-14 resize-none bg-zinc-800 border-zinc-700 focus:border-purple-500 rounded-xl text-white placeholder-zinc-400"
-                disabled={isGenerating || !isModelLoaded}
+                className="min-h-[60px] max-h-[200px] pr-14 resize-none bg-zinc-800 border-zinc-700 focus:border-purple-500 rounded-xl text-white placeholder-zinc-400 font-tiempos"
+                disabled={isGenerating || !isModelLoaded || isModelLoading}
               />
-              <Button
-                type="submit"
-                size="icon"
-                className="absolute right-2 bottom-2 h-10 w-10 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-lg shadow-lg"
-                disabled={isGenerating || !input.trim() || !isModelLoaded}
-              >
-                {isGenerating ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
+              {isGenerating || isModelLoading ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={handleStop}
+                  className="absolute right-2 bottom-2 h-10 w-10 bg-red-500 hover:bg-red-600 rounded-lg shadow-lg text-white"
+                >
+                  <StopCircle className="h-5 w-5" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="absolute right-2 bottom-2 h-10 w-10 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-lg shadow-lg"
+                  disabled={!input.trim() || !isModelLoaded}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              )}
             </div>
 
             {/* Bottom Controls */}

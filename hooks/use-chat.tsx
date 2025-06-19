@@ -3,8 +3,6 @@
 import { useState } from "react"
 import type { Message } from "@/lib/types"
 
-// Simplified useChat hook that doesn't directly interact with IndexedDB
-// The chat-layout component handles all persistence
 export function useChat(conversationId?: string) {
   const [messages, setMessages] = useState<Message[]>([])
   const [isGenerating, setIsGenerating] = useState(false)

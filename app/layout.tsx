@@ -1,14 +1,18 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Fira_Code } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 
-const inter = Inter({ subsets: ["latin"] })
+const firaCode = Fira_Code({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-fira-code",
+})
 
 export const metadata: Metadata = {
-  title: "Reelevate.AI - Reel Ideas Generator",
-  description: "Generate creative reel ideas with local AI",
+  title: "Reelevate.AI",
+  description: "Generate reels with local AI",
 }
 
 export default function RootLayout({
@@ -17,13 +21,17 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={firaCode.variable}>
       <head>
+        <link
+          href="https://db.onlinewebfonts.com/c/1b3f9cb78376a36884f3908f37a42c91?family=Tiempos+Text+Regular"
+          rel="stylesheet"
+        />
         <meta name="apple-mobile-web-app-title" content="Reelevate.AI" />
         <meta httpEquiv="Cross-Origin-Embedder-Policy" content="require-corp" />
         <meta httpEquiv="Cross-Origin-Opener-Policy" content="same-origin" />
       </head>
-      <body className={inter.className}>
+      <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>

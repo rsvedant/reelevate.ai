@@ -11,7 +11,6 @@ export function useIndexedDB() {
   const [db, setDb] = useState<IDBDatabase | null>(null)
   const [isReady, setIsReady] = useState(false)
 
-  // Initialize the database
   useEffect(() => {
     const openDB = () => {
       if (!window.indexedDB) {
@@ -50,13 +49,12 @@ export function useIndexedDB() {
 
     openDB()
 
-    // Cleanup function
     return () => {
       if (db) {
         db.close()
       }
     }
-  }, []) // Remove db from dependency array to prevent infinite loop
+  }, [])
 
   // Save a single conversation to IndexedDB
   const saveConversation = useCallback(
@@ -113,7 +111,7 @@ export function useIndexedDB() {
 
         request.onsuccess = () => {
           console.log("Raw conversations loaded:", request.result)
-          // Sort by updatedAt descending (newest first)
+          // Sort by updatedAt descending
           const conversations = request.result.sort(
             (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
           )
@@ -170,7 +168,6 @@ export function useIndexedDB() {
     [db, isReady],
   )
 
-  // Clear all conversations from IndexedDB
   const clearAllConversations = useCallback(async (): Promise<void> => {
     if (!db || !isReady) {
       console.warn("Database not ready for clearing")

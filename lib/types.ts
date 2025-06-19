@@ -20,7 +20,7 @@ export interface ModelRecord {
   id: string
   name: string
   model: string
-  url?: string
+  lib?: string
   size: string
 }
 

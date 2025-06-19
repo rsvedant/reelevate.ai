@@ -1,20 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable WebAssembly support
   webpack: (config, { isServer }) => {
-    // Add WebAssembly support
+
     config.experiments = {
       ...config.experiments,
       asyncWebAssembly: true,
     }
 
-    // Add support for .wasm files
     config.module.rules.push({
       test: /\.wasm$/,
       type: "webassembly/async",
     })
 
-    // Ensure proper handling of WebLLM workers
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -27,7 +25,6 @@ const nextConfig = {
     return config
   },
   
-  // Add headers for WebAssembly and SharedArrayBuffer support
   async headers() {
     return [
       {
@@ -48,9 +45,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // typescript: {
+  //   ignoreBuildErrors: true,
+  // },
   images: {
     unoptimized: true,
   },

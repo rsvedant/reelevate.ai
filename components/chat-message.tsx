@@ -66,7 +66,7 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
             maxWidth: "85%",
           }}
         >
-          <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+          <div className="whitespace-pre-wrap leading-relaxed font-tiempos">{message.content}</div>
           {message.pending && (
             <div className="flex items-center mt-3 text-zinc-400">
               <Loader className="h-3 w-3 animate-spin mr-2" />
@@ -95,7 +95,7 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 hover:bg-zinc-700/50 rounded-full border border-zinc-600/30"
+                className="h-8 w-8 ml-2 hover:bg-zinc-700/50 rounded-full border border-zinc-600/30"
               >
                 <MoreHorizontal className="w-4 h-4" />
               </Button>

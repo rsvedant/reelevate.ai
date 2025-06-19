@@ -14,7 +14,6 @@ export default function ModelSelector({ onModelSelect }: ModelSelectorProps) {
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0])
 
   useEffect(() => {
-    // Load saved model from localStorage
     const savedModelId = localStorage.getItem("selectedModelId")
     if (savedModelId) {
       const savedModel = AVAILABLE_MODELS.find((m) => m.id === savedModelId)
@@ -29,9 +28,7 @@ export default function ModelSelector({ onModelSelect }: ModelSelectorProps) {
     if (model) {
       setSelectedModel(model)
       setOpen(false)
-      // Save to localStorage
       localStorage.setItem("selectedModelId", model.id)
-      // Notify parent component
       if (onModelSelect) {
         onModelSelect(model.id)
       }

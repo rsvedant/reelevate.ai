@@ -6,6 +6,7 @@ import ChatInterface from "@/components/chat-interface"
 import type { Conversation } from "@/lib/types"
 import { v4 as uuidv4 } from "uuid"
 import { useIndexedDB } from "@/hooks/use-indexed-db"
+import { Toaster } from "@/components/ui/toaster"
 
 export default function ChatLayout() {
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -15,7 +16,6 @@ export default function ChatLayout() {
 
   const { saveConversation, loadConversations, deleteConversation, clearAllConversations, isReady } = useIndexedDB()
 
-  // Load settings from localStorage
   useEffect(() => {
     const savedStreamingEnabled = localStorage.getItem("streamingEnabled")
     if (savedStreamingEnabled !== null) {
@@ -23,13 +23,11 @@ export default function ChatLayout() {
     }
   }, [])
 
-  // Save streaming setting to localStorage
   const handleStreamingChange = (enabled: boolean) => {
     setStreamingEnabled(enabled)
     localStorage.setItem("streamingEnabled", JSON.stringify(enabled))
   }
 
-  // Load conversations from IndexedDB when database is ready
   useEffect(() => {
     const loadSavedConversations = async () => {
       if (!isReady) {
@@ -73,7 +71,6 @@ export default function ChatLayout() {
     setConversations((prev) => [newConversation, ...prev])
     setActiveConversationId(newConversation.id)
 
-    // Save to IndexedDB
     try {
       await saveConversation(newConversation)
       console.log("New conversation saved to IndexedDB")
@@ -102,7 +99,6 @@ export default function ChatLayout() {
           updatedAt: new Date().toISOString(),
         }
 
-        // Auto-generate title after first AI response
         if (updates.messages && updates.messages.length >= 2 && conv.title === "New Conversation") {
           const userMessage = updates.messages.find((m) => m.role === "user")
           const aiMessage = updates.messages.find((m) => m.role === "assistant" && !m.pending)
@@ -119,7 +115,6 @@ export default function ChatLayout() {
 
     setConversations(updatedConversations)
 
-    // Save updated conversation to IndexedDB
     const updatedConversation = updatedConversations.find((conv) => conv.id === conversationId)
     if (updatedConversation) {
       try {
@@ -190,6 +185,7 @@ export default function ChatLayout() {
           streamingEnabled={streamingEnabled}
         />
       </div>
+      <Toaster />
     </div>
   )
 }
