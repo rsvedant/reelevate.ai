@@ -24,6 +24,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={firaCode.variable}>
       <head>
         <link
+          crossOrigin="anonymous"
           href="https://db.onlinewebfonts.com/c/1b3f9cb78376a36884f3908f37a42c91?family=Tiempos+Text+Regular"
           rel="stylesheet"
         />
