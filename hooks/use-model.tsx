@@ -16,8 +16,8 @@ export function useModel() {
 
   const webllmRef = useRef<typeof import("@mlc-ai/web-llm") | null>(null)
   const engineRef = useRef<WebLLMTypes.MLCEngine | null>(null)
-  const isLoadingCancelledRef = useRef(false)
   const initialLoadStartedRef = useRef(false)
+  const activeLoadRef = useRef<Promise<WebLLMTypes.MLCEngine> | null>(null)
 
   const ensureWebLLMLoaded = async (): Promise<typeof import("@mlc-ai/web-llm")> => {
     if (webllmRef.current) {
@@ -61,13 +61,16 @@ export function useModel() {
   const stop = useCallback(async () => {
     if (isModelLoading) {
       console.log("Attempting to cancel model loading...")
-      isLoadingCancelledRef.current = true
+      activeLoadRef.current = null
       if (engineRef.current) {
         await engineRef.current.unload()
         engineRef.current = null
-        setModel(null)
-        setIsModelLoaded(false)
       }
+      setModel(null)
+      setIsModelLoaded(false)
+      setIsModelLoading(false)
+      setProgress(0)
+      setError("Model loading cancelled by user.")
     } else if (model?.engine) {
       try {
         await model.engine.interruptGenerate()
@@ -122,196 +125,171 @@ export function useModel() {
     }
   }  
 
-  const loadModelById = useCallback(
-    async (modelId: string) => {
-      if (engineRef.current) {
-        await unloadModel()
-      }
+  const loadModelById = useCallback(async (modelId: string) => {
+    if (engineRef.current) {
+      await unloadModel()
+    }
 
-      const modelRecord = AVAILABLE_MODELS.find((m) => m.id === modelId)
-      if (!modelRecord) {
-        setError(`Model ${modelId} not found`)
+    const modelRecord = AVAILABLE_MODELS.find((m) => m.id === modelId)
+    if (!modelRecord) {
+      setError(`Model ${modelId} not found`)
+      return
+    }
+
+    setSelectedModelRecord(modelRecord)
+    setIsModelLoading(true)
+    setProgress(0)
+    setError(null)
+    setIsModelLoaded(false)
+
+    const loadPromise = (async () => {
+      const webllm = await ensureWebLLMLoaded()
+      console.log("Creating WebLLM engine for model:", modelRecord.model)
+      const isCustomModel = isCustomModelUrl(modelRecord.id)
+      const engineOptions: any = isCustomModel
+        ? {
+            appConfig: {
+              model_list: [await createCustomModelConfig(modelRecord)],
+              useIndexedDB: true,
+            },
+            initProgressCallback: (report: any) => {
+              if (activeLoadRef.current !== loadPromise) {
+                setIsModelLoading(false)
+                setProgress(0)
+                setError("Model loading cancelled by user.")
+                throw new Error("Model loading cancelled by user.")
+              }
+              console.log("Loading progress:", report)
+              if (typeof report.progress === "number") {
+                setProgress(Math.max(0, Math.min(1, report.progress)))
+              }
+            },
+          }
+        : {
+            initProgressCallback: (report: any) => {
+              if (activeLoadRef.current !== loadPromise) {
+                setIsModelLoading(false)
+                setProgress(0)
+                setError("Model loading cancelled by user.")
+                throw new Error("Model loading cancelled by user.")
+              }
+              console.log("Loading progress:", report)
+              if (typeof report.progress === "number") {
+                setProgress(Math.max(0, Math.min(1, report.progress)))
+              }
+            },
+          }
+
+      if (isCustomModel) {
+        console.log("Loading custom model from:", modelRecord.id)
+      }
+      return webllm.CreateMLCEngine(modelRecord.model, engineOptions)
+    })()
+
+    activeLoadRef.current = loadPromise
+
+    try {
+      const engine = await loadPromise
+      if (activeLoadRef.current !== loadPromise) {
+        await engine.unload()
         return
       }
+      engineRef.current = engine
+      console.log("WebLLM engine created successfully")
 
-      setSelectedModelRecord(modelRecord)
-      setIsModelLoading(true)
-      setProgress(0)
-      setError(null)
-      setIsModelLoaded(false)
-      isLoadingCancelledRef.current = false
-
-      try {
-        const webllm = await ensureWebLLMLoaded()
-
-        console.log("Creating WebLLM engine for model:", modelRecord.model)
-
-        const isCustomModel = isCustomModelUrl(modelRecord.id)
-
-        let engine
-        try {
-          
-          if (isCustomModel) {
-            const modelConfig = await createCustomModelConfig(modelRecord)
-            const appConfig = {
-              model_list: [modelConfig],
-              useIndexedDB: true
+      const modelWrapper: WebLLMModel = {
+        engine,
+        name: modelRecord.name,
+        id: modelRecord.id,
+        chatCompletion: async (messages: any[], options: any = {}) => {
+          try {
+            if (!engine || !engine.chat || !engine.chat.completions) {
+              throw new Error("Model engine not properly initialized")
             }
 
-            const engineOptions = {
-              appConfig: appConfig,
-              initProgressCallback: (report: any) => {
-                if (isLoadingCancelledRef.current) {
-                  setIsModelLoading(false)
-                  setProgress(0)
-                  setError("Model loading cancelled by user.")
-                  throw new Error("Model loading cancelled by user.")
-                }
-                console.log("Loading progress:", report)
-                if (report && typeof report.progress === "number") {
-                  setProgress(Math.max(0, Math.min(1, report.progress)))
-                }
-              },
+            console.log("Starting chat completion with messages:", messages)
+
+            let fullResponse = ""
+
+            const formattedMessages = messages.map((msg) => ({
+              role: msg.role,
+              content: msg.content,
+            }))
+
+            const completionOptions = {
+              messages: formattedMessages,
+              temperature: options.temperature || 0.7,
+              max_tokens: options.max_tokens || 800,
+              stream: options.stream || false,
             }
 
-            console.log("Loading custom model from:", modelRecord.id)
+            console.log("Completion options:", completionOptions)
 
-            engine = await webllm.CreateMLCEngine(modelRecord.model, engineOptions)
+            if (options.stream && options.callback) {
+              try {
+                console.log("Starting streaming completion")
+                const completion = await engine.chat.completions.create({
+                  ...completionOptions,
+                  stream: true,
+                })
 
-          } else {
-            
-            const engineOptions = {
-              initProgressCallback: (report: any) => {
-                if (isLoadingCancelledRef.current) {
-                  setIsModelLoading(false)
-                  setProgress(0)
-                  setError("Model loading cancelled by user.")
-                  throw new Error("Model loading cancelled by user.")
-                }
-                console.log("Loading progress:", report)
-                if (report && typeof report.progress === "number") {
-                  setProgress(Math.max(0, Math.min(1, report.progress)))
-                }
-              },
-            }
-            engine = await webllm.CreateMLCEngine(modelRecord.model, engineOptions)
-          }
-
-        } catch (engineError: any) {
-          console.error("Engine creation failed:", engineError)
-          if (!isLoadingCancelledRef.current) {
-            setError(`Model loading failed: ${engineError.message || "Unknown error"}`)
-            throw new Error(`Model loading failed: ${engineError.message || "Unknown error"}`)
-          }
-        }
-
-        if (isLoadingCancelledRef.current || !engine) {
-          console.log("Model loading was cancelled or failed, cleaning up.")
-          if (engine) await engine.unload()
-          return
-        }
-
-        engineRef.current = engine
-
-        console.log("WebLLM engine created successfully")
-
-        const modelWrapper: WebLLMModel = {
-          engine,
-          name: modelRecord.name,
-          id: modelRecord.id,
-          chatCompletion: async (messages: any[], options: any = {}) => {
-            try {
-              if (!engine || !engine.chat || !engine.chat.completions) {
-                throw new Error("Model engine not properly initialized")
-              }
-
-              console.log("Starting chat completion with messages:", messages)
-
-              let fullResponse = ""
-
-              const formattedMessages = messages.map((msg) => ({
-                role: msg.role,
-                content: msg.content,
-              }))
-
-              const completionOptions = {
-                messages: formattedMessages,
-                temperature: options.temperature || 0.7,
-                max_tokens: options.max_tokens || 800,
-                stream: options.stream || false,
-              }
-
-              console.log("Completion options:", completionOptions)
-
-              if (options.stream && options.callback) {
-                try {
-                  console.log("Starting streaming completion")
-                  const completion = await engine.chat.completions.create({
-                    ...completionOptions,
-                    stream: true,
-                  })
-
-                  console.log("Streaming completion created, processing chunks")
-                  for await (const chunk of completion) {
-                    const content = chunk.choices?.[0]?.delta?.content || ""
-                    if (content) {
-                      console.log("Received chunk:", content)
-                      fullResponse += content
-                      options.callback(content)
-                    }
-                  }
-                  console.log("Streaming completed, full response:", fullResponse)
-                } catch (streamError) {
-                  console.error("Streaming error, falling back to non-streaming:", streamError)
-                  const completion = await engine.chat.completions.create({
-                    ...completionOptions,
-                    stream: false,
-                  })
-                  fullResponse = completion.choices?.[0]?.message?.content || ""
-                  console.log("Non-streaming fallback response:", fullResponse)
-                  if (fullResponse && options.callback) {
-                    options.callback(fullResponse)
+                console.log("Streaming completion created, processing chunks")
+                for await (const chunk of completion) {
+                  const content = chunk.choices?.[0]?.delta?.content || ""
+                  if (content) {
+                    console.log("Received chunk:", content)
+                    fullResponse += content
+                    options.callback(content)
                   }
                 }
-              } else {
-                console.log("Starting non-streaming completion")
+                console.log("Streaming completed, full response:", fullResponse)
+              } catch (streamError) {
+                console.error("Streaming error, falling back to non-streaming:", streamError)
                 const completion = await engine.chat.completions.create({
                   ...completionOptions,
                   stream: false,
                 })
                 fullResponse = completion.choices?.[0]?.message?.content || ""
-                console.log("Non-streaming response:", fullResponse)
+                console.log("Non-streaming fallback response:", fullResponse)
+                if (fullResponse && options.callback) {
+                  options.callback(fullResponse)
+                }
               }
-
-              return fullResponse
-            } catch (chatError: any) {
-              console.error("Error in chat completion:", chatError)
-              setError(`Chat failed: ${chatError.message || "Unknown error"}`)
-              throw new Error(`Chat failed: ${chatError.message || "Unknown error"}`)
+            } else {
+              console.log("Starting non-streaming completion")
+              const completion = await engine.chat.completions.create({
+                ...completionOptions,
+                stream: false,
+              })
+              fullResponse = completion.choices?.[0]?.message?.content || ""
+              console.log("Non-streaming response:", fullResponse)
             }
-          },
-        }
 
-        setModel(modelWrapper)
-        setIsModelLoaded(true)
-        setProgress(1)
-
-        localStorage.setItem("selectedModelId", modelRecord.id)
-
-        console.log("Model loaded successfully:", modelRecord.name)
-      } catch (err: any) {
-        console.error("Error loading model:", err)
-        if (!isLoadingCancelledRef.current) {
-          setError(err.message || "Failed to load model. Please try again.")
-        }
-      } finally {
-        if (!isLoadingCancelledRef.current) {
-          setIsModelLoading(false)
-        }
+            return fullResponse
+          } catch (chatError: any) {
+            console.error("Error in chat completion:", chatError)
+            setError(`Chat failed: ${chatError.message || "Unknown error"}`)
+            throw new Error(`Chat failed: ${chatError.message || "Unknown error"}`)
+          }
+        },
       }
-    },
-    [],
-  )
+
+      setModel(modelWrapper)
+      setIsModelLoaded(true)
+      setProgress(1)
+      localStorage.setItem("selectedModelId", modelRecord.id)
+      console.log("Model loaded successfully:", modelRecord.name)
+    } catch (err: any) {
+      console.error("Error loading model:", err)
+      if (activeLoadRef.current === loadPromise) {
+        setError(err.message || "Failed to load model. Please try again.")
+      }
+    } finally {
+      if (activeLoadRef.current === loadPromise) {
+        setIsModelLoading(false)
+      }
+    }
+  }, [])
 
   const loadModel = useCallback(async () => {
     if (selectedModelRecord) {
