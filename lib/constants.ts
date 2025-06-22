@@ -1128,7 +1128,7 @@ export const AVAILABLE_MODELS: ModelRecord[] = [
   // StableLM
   {
     id: "stablelm-2-zephyr-1_6b-q4f16_1-MLC",
-    name: "stablelm 2 zephyr 1_6b (q4f16_1)",
+    name: "StableLM 2 Zephyr 1.6B (q4f16_1)",
     model: "stablelm-2-zephyr-1_6b-q4f16_1-MLC",
     provider: "Hugging Face",
     family: "StableLM",
@@ -1142,7 +1142,7 @@ export const AVAILABLE_MODELS: ModelRecord[] = [
   },
   {
     id: "stablelm-2-zephyr-1_6b-q4f32_1-MLC",
-    name: "stablelm 2 zephyr 1_6b (q4f32_1)",
+    name: "StableLM 2 Zephyr 1.6B (q4f32_1)",
     model: "stablelm-2-zephyr-1_6b-q4f32_1-MLC",
     provider: "Hugging Face",
     family: "StableLM",
@@ -1156,7 +1156,7 @@ export const AVAILABLE_MODELS: ModelRecord[] = [
   },
   {
     id: "stablelm-2-zephyr-1_6b-q4f16_1-MLC-1k",
-    name: "stablelm 2 zephyr 1_6b (q4f16_1-1k)",
+    name: "StableLM 2 Zephyr 1.6B (q4f16_1-1k)",
     model: "stablelm-2-zephyr-1_6b-q4f16_1-MLC-1k",
     provider: "Hugging Face",
     family: "StableLM",
@@ -1170,7 +1170,7 @@ export const AVAILABLE_MODELS: ModelRecord[] = [
   },
   {
     id: "stablelm-2-zephyr-1_6b-q4f32_1-MLC-1k",
-    name: "stablelm 2 zephyr 1_6b (q4f32_1-1k)",
+    name: "StableLM 2 Zephyr 1.6B (q4f32_1-1k)",
     model: "stablelm-2-zephyr-1_6b-q4f32_1-MLC-1k",
     provider: "Hugging Face",
     family: "StableLM",
@@ -1638,7 +1638,7 @@ export const AVAILABLE_MODELS: ModelRecord[] = [
   },
   {
     id: "phi-1_5-q4f16_1-MLC",
-    name: "phi 1_5 (q4f16_1)",
+    name: "Phi 1.5 (q4f16_1)",
     model: "phi-1_5-q4f16_1-MLC",
     provider: "Microsoft",
     family: "Phi",
@@ -1650,7 +1650,7 @@ export const AVAILABLE_MODELS: ModelRecord[] = [
   },
   {
     id: "phi-1_5-q4f32_1-MLC",
-    name: "phi 1_5 (q4f32_1)",
+    name: "Phi 1.5 (q4f32_1)",
     model: "phi-1_5-q4f32_1-MLC",
     provider: "Microsoft",
     family: "Phi",
@@ -1662,7 +1662,7 @@ export const AVAILABLE_MODELS: ModelRecord[] = [
   },
   {
     id: "phi-1_5-q4f16_1-MLC-1k",
-    name: "phi 1_5 (q4f16_1-1k)",
+    name: "Phi 1.5 (q4f16_1-1k)",
     model: "phi-1_5-q4f16_1-MLC-1k",
     provider: "Microsoft",
     family: "Phi",
@@ -1674,7 +1674,7 @@ export const AVAILABLE_MODELS: ModelRecord[] = [
   },
   {
     id: "phi-1_5-q4f32_1-MLC-1k",
-    name: "phi 1_5 (q4f32_1-1k)",
+    name: "Phi 1.5 (q4f32_1-1k)",
     model: "phi-1_5-q4f32_1-MLC-1k",
     provider: "Microsoft",
     family: "Phi",
