@@ -1,3 +1,5 @@
+import path from 'path'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -24,6 +26,7 @@ const nextConfig = {
 
     config.module.rules.push({
       test: /\.svg$/,
+      exclude: path.resolve(process.cwd(), 'app/icon0.svg'),
       use: ["@svgr/webpack"],
     });
 
