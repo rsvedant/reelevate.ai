@@ -1,5 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    turbo: {
+      rules: {
+        "**/*.svg": {
+          as: "*.js",
+          loaders: ["@svgr/webpack"],
+        },
+      },
+    },
+  },
   webpack: (config, { isServer }) => {
 
     config.experiments = {
@@ -12,6 +22,10 @@ const nextConfig = {
       type: "webassembly/async",
     })
 
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ["@svgr/webpack"],
+    });
 
     if (!isServer) {
       config.resolve.fallback = {

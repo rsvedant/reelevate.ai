@@ -19,9 +19,17 @@ export interface Conversation {
 export interface ModelRecord {
   id: string
   name: string
+  provider: string
   model: string
   lib?: string
-  size: string
+  family: string
+  recommended_config?: {
+    temperature: number,
+    presence_penalty?: number,
+    frequency_penalty?: number,
+    top_p: number
+  }
+  icon: string
 }
 
 export interface WebLLMModel {

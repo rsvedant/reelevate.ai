@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import ChatMessage from "@/components/chat-message"
 import ModelSelector from "@/components/model-selector"
 import { Badge } from "@/components/ui/badge"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 
 interface ChatInterfaceProps {
   conversation?: Conversation
@@ -214,9 +214,9 @@ export default function ChatInterface({
     }
   }
 
-  const handleModelSwitch = async (modelId: string) => {
+  const handleModelSwitch = (modelId: string) => {
+    switchModel(modelId)
     setShowModelSelector(false)
-    await switchModel(modelId)
   }
 
   const handleMessageAction = (messageId: string, action: string) => {
@@ -356,8 +356,8 @@ export default function ChatInterface({
             {/* Bottom Controls */}
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-4">
-                <DropdownMenu open={showModelSelector} onOpenChange={setShowModelSelector}>
-                  <DropdownMenuTrigger asChild>
+                <Dialog open={showModelSelector} onOpenChange={setShowModelSelector}>
+                  <DialogTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
@@ -368,14 +368,14 @@ export default function ChatInterface({
                       {selectedModelRecord?.name || "Select Model"}
                       <ChevronDown className="w-4 h-4 ml-2" />
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-96 p-0" align="start" side="top">
-                    <div className="p-4 bg-zinc-900 border border-zinc-700 rounded-lg">
-                      <h3 className="font-medium mb-3 text-white">Select Model</h3>
-                      <ModelSelector onModelSelect={handleModelSwitch} />
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-5xl p-0 bg-zinc-900 border-zinc-800 text-white rounded-lg">
+                    <ModelSelector
+                      selectedModelId={selectedModelRecord?.id}
+                      onModelSelect={handleModelSwitch}
+                    />
+                  </DialogContent>
+                </Dialog>
 
                 {isModelLoading && (
                   <div className="flex items-center space-x-2 text-zinc-400">
