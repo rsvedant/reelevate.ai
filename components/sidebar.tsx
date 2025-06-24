@@ -2,16 +2,25 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { Plus, MessageSquare, Trash2, MoreHorizontal, Edit3 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Plus, MessageSquare, Trash2, MoreHorizontal, Edit3, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { Conversation } from "@/lib/types"
 import { cn } from "@/lib/utils"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import SettingsDialog from "@/components/settings-dialog"
+import Image from "next/image"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface SidebarProps {
+  isOpen: boolean
+  onToggle: () => void
   conversations: Conversation[]
   activeConversationId: string | null
   onSelectConversation: (id: string) => void
@@ -25,6 +34,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({
+  isOpen,
+  onToggle,
   conversations,
   activeConversationId,
   onSelectConversation,
@@ -39,6 +50,13 @@ export default function Sidebar({
   const [hoveredConversation, setHoveredConversation] = useState<string | null>(null)
   const [editingConversation, setEditingConversation] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState("")
+  const [isHovered, setIsHovered] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsHovered(false)
+    }
+  }, [isOpen])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -81,30 +99,89 @@ export default function Sidebar({
   }
 
   return (
-    <div className="w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-zinc-800">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-            <MessageSquare className="w-5 h-5 text-white" />
+    <div
+      className={cn(
+        "bg-zinc-950 border-r border-zinc-800 flex flex-col transition-all duration-300 ease-in-out",
+        isOpen ? "w-80" : "w-20 items-center",
+      )}
+    >
+      <div className={cn("p-4 border-b border-zinc-800", !isOpen && "border-none")}>
+        {isOpen ? (
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <Image src="/reelevate.png" alt="Reelevate Logo" className="text-white" height={40} width={40} />
+              <div>
+                <h1 className="font-semibold text-lg text-white">Reelevate.AI</h1>
+                <p className="text-xs text-zinc-400">AI Reels Generator</p>
+              </div>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={onToggle}>
+                    <PanelLeftClose className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Close sidebar</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-          <div>
-            <h1 className="font-semibold text-lg text-white">Reelevate.AI</h1>
-            <p className="text-xs text-zinc-400">AI Reel Ideas Generator</p>
+        ) : (
+          <div className="flex justify-center mb-4">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={onToggle}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                  >
+                    {isHovered ? (
+                      <PanelLeftOpen className="h-5 w-5" />
+                    ) : (
+                      <Image src="/reelevate.png" alt="Reelevate Logo" height={40} width={40} />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Open sidebar</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-        </div>
+        )}
 
-        <Button
-          onClick={onNewConversation}
-          className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-lg transition-all duration-200"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Conversation
-        </Button>
+        <div className={cn(!isOpen && "flex justify-center")}>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={onNewConversation}
+                  className={cn(
+                    "w-full bg-white hover:bg-white/80 text-black border-0 shadow-lg transition-all duration-200",
+                    !isOpen && "w-auto",
+                  )}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className={cn("ml-2", !isOpen && "hidden")}>New Conversation</span>
+                </Button>
+              </TooltipTrigger>
+              {!isOpen && (
+                <TooltipContent side="right">
+                  <p>New Conversation</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
-      {/* Navigation */}
-      <div className="p-4 border-b border-zinc-800">
+      <div className={cn("p-4 border-b border-zinc-800", !isOpen && "hidden")}>
         <SettingsDialog
           onClearAllData={onClearAllConversations}
           onExportData={() => {
@@ -135,9 +212,7 @@ export default function Sidebar({
           onStreamingChange={onStreamingChange}
         />
       </div>
-
-      {/* Conversations List */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className={cn("flex-1", !isOpen && "hidden")}>
         <div className="p-2">
           {conversations.length === 0 ? (
             <div className="text-center text-zinc-500 py-12">
@@ -153,7 +228,7 @@ export default function Sidebar({
                   className={cn(
                     "group relative rounded-xl p-3 cursor-pointer transition-all duration-200",
                     activeConversationId === conversation.id
-                      ? "bg-gradient-to-r from-purple-500/10 to-purple-600/10 border border-purple-500/20 shadow-lg"
+                      ? "bg-white/10 border border-white/20 shadow-lg"
                       : "hover:bg-zinc-800/50 border border-transparent",
                   )}
                   onClick={() => !editingConversation && onSelectConversation(conversation.id)}
@@ -172,7 +247,7 @@ export default function Sidebar({
                             if (e.key === "Enter") handleEditSave(conversation.id)
                             if (e.key === "Escape") handleEditCancel()
                           }}
-                          className="w-full bg-zinc-800 border border-zinc-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-purple-500"
+                          className="w-full bg-zinc-800 border border-zinc-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-white"
                           autoFocus
                           onClick={(e) => e.stopPropagation()}
                         />

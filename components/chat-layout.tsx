@@ -7,21 +7,33 @@ import type { Conversation } from "@/lib/types"
 import { v4 as uuidv4 } from "uuid"
 import { useIndexedDB } from "@/hooks/use-indexed-db"
 import { Toaster } from "@/components/ui/toaster"
+import { Button } from "@/components/ui/button"
+import { PanelLeftOpen } from "lucide-react"
 
 export default function ChatLayout() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [streamingEnabled, setStreamingEnabled] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   const { saveConversation, loadConversations, deleteConversation, clearAllConversations, isReady } = useIndexedDB()
 
   useEffect(() => {
+    const savedSidebarState = localStorage.getItem("sidebarOpen")
+    if (savedSidebarState !== null) {
+      setIsSidebarOpen(JSON.parse(savedSidebarState))
+    }
+
     const savedStreamingEnabled = localStorage.getItem("streamingEnabled")
     if (savedStreamingEnabled !== null) {
       setStreamingEnabled(JSON.parse(savedStreamingEnabled))
     }
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen))
+  }, [isSidebarOpen])
 
   const handleStreamingChange = (enabled: boolean) => {
     setStreamingEnabled(enabled)
@@ -156,7 +168,7 @@ export default function ChatLayout() {
     return (
       <div className="flex h-screen bg-zinc-900 text-white items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
           <p className="text-zinc-400">Loading conversations...</p>
         </div>
       </div>
@@ -166,6 +178,8 @@ export default function ChatLayout() {
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       <Sidebar
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         conversations={conversations}
         activeConversationId={activeConversationId}
         onSelectConversation={setActiveConversationId}

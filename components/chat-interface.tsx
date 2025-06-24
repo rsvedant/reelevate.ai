@@ -253,8 +253,8 @@ export default function ChatInterface({
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
         <div className="text-center space-y-6 max-w-md">
-          <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
-            <Sparkles className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
+            <Sparkles className="w-10 h-10 text-black" />
           </div>
           <div className="space-y-3">
             <h2 className="text-3xl font-bold text-white">Welcome to Reelevate.AI</h2>
@@ -265,7 +265,7 @@ export default function ChatInterface({
           </div>
           <Button
             onClick={onNewConversation}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 text-lg font-medium shadow-xl transition-all duration-200"
+            className="bg-white hover:bg-white/80 text-black px-8 py-3 text-lg font-medium shadow-xl transition-all duration-200"
           >
             <Plus className="w-5 h-5 mr-2" />
             Start New Conversation
@@ -299,8 +299,8 @@ export default function ChatInterface({
         <div className="max-w-4xl mx-auto space-y-6 w-full">
           {conversation.messages.length === 0 ? (
             <div className="text-center py-16">
-              <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-8 h-8 text-purple-500" />
+              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-white">Start a conversation</h3>
               <p className="text-zinc-400">Ask for reel ideas, creative concepts, or trending topics</p>
@@ -329,7 +329,7 @@ export default function ChatInterface({
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
                 placeholder={isModelLoaded ? "Ask for reel ideas..." : "Please load a model first..."}
-                className="min-h-[60px] max-h-[200px] pr-14 resize-none bg-zinc-800 border-zinc-700 focus:border-purple-500 rounded-xl text-white placeholder-zinc-400 font-tiempos"
+                className="min-h-[60px] max-h-[200px] pr-14 resize-none bg-zinc-800 border-zinc-700 focus:border-white focus-visible:ring-0 focus-visible:ring-offset-0 rounded-xl text-white placeholder-zinc-400 font-tiempos"
                 disabled={isGenerating || !isModelLoaded || isModelLoading}
               />
               {isGenerating || isModelLoading ? (
@@ -345,10 +345,10 @@ export default function ChatInterface({
                 <Button
                   type="submit"
                   size="icon"
-                  className="absolute right-2 bottom-2 h-10 w-10 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-lg shadow-lg"
+                  className="absolute right-2 bottom-2 h-10 w-10 bg-white text-black hover:bg-zinc-200 hover:shadow-md rounded-lg shadow-lg transition-all duration-200"
                   disabled={!input.trim() || !isModelLoaded}
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-5 w-5" />
                 </Button>
               )}
             </div>

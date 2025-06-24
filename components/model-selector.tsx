@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import Image from "next/image"
 
 interface ModelSelectorProps {
   selectedModelId?: string
@@ -80,19 +81,19 @@ export default function ModelSelector({ selectedModelId, onModelSelect }: ModelS
   }, [groupedModels])
 
   const providerIcons: { [key: string]: React.ReactNode } = {
-    All: <Star className="w-4 h-4 mr-3 flex-shrink-0" />,
-    Reelevate: <img src="/reelevate.png" alt="Reelevate Logo" className="w-4 h-4 mr-3 flex-shrink-0" />,
-    Meta: <MetaIcon className="w-4 h-4 mr-3 flex-shrink-0" />,
-    Google: <GoogleIcon className="w-4 h-4 mr-3 flex-shrink-0" />,
-    Qwen: <img src="/qwen.webp" alt="Qwen Logo" className="w-4 h-4 mr-3 flex-shrink-0" />,
-    DeepSeek: <DeepSeekIcon className="w-4 h-4 mr-3 flex-shrink-0" />,
-    Microsoft: <MicrosoftIcon className="w-4 h-4 mr-3 flex-shrink-0" />,
-    Mistral: <MistralIcon className="w-4 h-4 mr-3 flex-shrink-0" />,
-    StableLM: <StablelmIcon className="w-4 h-4 mr-3 flex-shrink-0" />,
-    SmolLM: <img src="/smollm.png" alt="SmolLM Logo" className="w-4 h-4 mr-3 flex-shrink-0" />,
-    RedPajama: <Shirt className="w-4 h-4 mr-3 flex-shrink-0" />,
-    WizardLM: <WandSparkles className="w-4 h-4 mr-3 flex-shrink-0" />,
-    Other: <Bot className="w-4 h-4 mr-3 flex-shrink-0" />,
+    All: <Star className="mr-3 flex-shrink-0" height={16} width={16} />,
+    Reelevate: <Image src="/reelevate.png" alt="Reelevate Logo" className="mr-3 flex-shrink-0" height={16} width={16} />,
+    Meta: <MetaIcon className="mr-3 flex-shrink-0" height={16} width={16} />,
+    Google: <GoogleIcon className="mr-3 flex-shrink-0" height={16} width={16} />,
+    Qwen: <Image src="/qwen.webp" alt="Qwen Logo" className="mr-3 flex-shrink-0" height={16} width={16} />,
+    DeepSeek: <DeepSeekIcon className="mr-3 flex-shrink-0" height={16} width={16} />,
+    Microsoft: <MicrosoftIcon className="mr-3 flex-shrink-0" height={16} width={16} />,
+    Mistral: <MistralIcon className="mr-3 flex-shrink-0" height={16} width={16} />,
+    StableLM: <StablelmIcon className="mr-3 flex-shrink-0" height={16} width={16} />,
+    SmolLM: <Image src="/smollm.png" alt="SmolLM Logo" className="mr-3 flex-shrink-0" height={16} width={16} />,
+    RedPajama: <Shirt className="mr-3 flex-shrink-0" height={16} width={16} />,
+    WizardLM: <WandSparkles className="mr-3 flex-shrink-0" height={16} width={16} />,
+    Other: <Bot className="mr-3 flex-shrink-0" height={16} width={16} />,
   }
 
   const familyToIconName = useMemo(() => {
