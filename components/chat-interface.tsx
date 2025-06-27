@@ -55,6 +55,13 @@ export default function ChatInterface({
   }
 
   useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto"
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+    }
+  }, [input])
+
+  useEffect(() => {
     scrollToBottom()
   }, [conversation?.messages])
 
@@ -207,25 +214,17 @@ export default function ChatInterface({
     const userMessage = input.trim()
     setInput("")
     await sendMessage(userMessage)
-
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"
-    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSubmit(e)
+      handleSubmit(e as any)
     }
   }
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
-    }
   }
 
   const handleModelSwitch = (modelId: string) => {

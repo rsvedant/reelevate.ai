@@ -1,16 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import type { Message } from "@/lib/types"
 import { cn } from "@/lib/utils"
-import { Loader, Copy, RotateCcw, Trash2, MoreHorizontal, User, Bot, Edit } from "lucide-react"
+import { Loader, Copy, RotateCcw, Trash2, MoreHorizontal, User, Bot, Edit, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import ReactMarkdown from "react-markdown"
-import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
 import "katex/dist/katex.min.css"
-import { BlockMath, InlineMath } from "react-katex"
 
 interface ChatMessageProps {
   message: Message
@@ -20,181 +20,8 @@ interface ChatMessageProps {
 export default function ChatMessage({ message, onAction }: ChatMessageProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [processedContent, setProcessedContent] = useState<React.ReactNode[]>([])
   const isUser = message.role === "user"
   const isSystem = message.system
-
-  useEffect(() => {
-    if (message.content && !isSystem) {
-      setProcessedContent(renderContentWithLaTeX(message.content))
-    }
-  }, [message.content, isSystem])
-
-  const renderContentWithLaTeX = (content: string) => {
-    if (!content) return []
-    // Use 'g' flag only (without 's' flag) for compatibility with older TypeScript targets
-    const blockRegex = /\\\[([\s\S]*?)\\\]/g
-    const inlineRegex = /\\\(([\s\S]*?)\\\)/g
-
-    let lastIndex = 0
-    const parts: React.ReactNode[] = []
-    let match
-    let contentCopy = content
-
-    // Replace block math
-    while ((match = blockRegex.exec(contentCopy)) !== null) {
-      // Add text before the match
-      if (match.index > lastIndex) {
-        parts.push(
-          <ReactMarkdown
-            key={`text-${lastIndex}`}
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
-            components={{
-              pre: ({ node, ...props }) => <pre className="p-2 rounded bg-muted/80 overflow-auto" {...props} />,
-              code: ({ node, className, children, ...props }) => {
-                const match = /language-(\w+)/.exec(className || "")
-                return match ? (
-                  <code className={className} {...props}>
-                    {children}
-                  </code>
-                ) : (
-                  <code className="bg-muted/50 px-1 py-0.5 rounded text-sm" {...props}>{children}</code>
-                )
-              },
-              a: ({ node, ...props }) => (
-                <a className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
-              ),
-            }}
-          >
-            {contentCopy.slice(lastIndex, match.index)}
-          </ReactMarkdown>,
-        )
-      }
-
-      // Add the LaTeX block
-      try {
-        parts.push(<BlockMath key={`math-${match.index}`} math={match[1]} />)
-      } catch (error) {
-        parts.push(
-          <div key={`math-error-${match.index}`} className="text-red-500">
-            {match[0]}
-          </div>,
-        )
-      }
-
-      lastIndex = match.index + match[0].length
-    }
-
-    if (lastIndex < contentCopy.length) {
-      let remainingContent = contentCopy.slice(lastIndex)
-
-      lastIndex = 0
-      const inlineParts: React.ReactNode[] = []
-
-      while ((match = inlineRegex.exec(remainingContent)) !== null) {
-        if (match.index > lastIndex) {
-          inlineParts.push(
-            <ReactMarkdown
-              key={`inline-text-${lastIndex}`}
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeHighlight]}
-              components={{
-                pre: ({ node, ...props }) => <pre className="p-2 rounded bg-muted/80 overflow-auto" {...props} />,
-                code: ({ node, className, children, ...props }) => {
-                  const match = /language-(\w+)/.exec(className || "")
-                  return match ? (
-                    <code className={className} {...props}>
-                      {children}
-                    </code>
-                  ) : (
-                    <code className="bg-muted/50 px-1 py-0.5 rounded text-sm" {...props}>{children}</code>
-                  )
-                },
-                a: ({ node, ...props }) => (
-                  <a className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
-                ),
-              }}
-            >
-              {remainingContent.slice(lastIndex, match.index)}
-            </ReactMarkdown>,
-          )
-        }
-
-        try {
-          inlineParts.push(<InlineMath key={`inline-math-${match.index}`} math={match[1]} />)
-        } catch (error) {
-          inlineParts.push(
-            <span key={`inline-math-error-${match.index}`} className="text-red-500">
-              {match[0]}
-            </span>,
-          )
-        }
-
-        lastIndex = match.index + match[0].length
-      }
-
-      if (lastIndex < remainingContent.length) {
-        inlineParts.push(
-          <ReactMarkdown
-            key={`inline-text-final`}
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
-            components={{
-              pre: ({ node, ...props }) => <pre className="p-2 rounded bg-muted/80 overflow-auto" {...props} />,
-              code: ({ node, className, children, ...props }) => {
-                const match = /language-(\w+)/.exec(className || "")
-                return match ? (
-                  <code className={className} {...props}>
-                    {children}
-                  </code>
-                ) : (
-                  <code className="bg-muted/50 px-1 py-0.5 rounded text-sm" {...props}>{children}</code>
-                )
-              },
-              a: ({ node, ...props }) => (
-                <a className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
-              ),
-            }}
-          >
-            {remainingContent.slice(lastIndex)}
-          </ReactMarkdown>,
-        )
-      }
-
-      if (inlineParts.length > 0) {
-        parts.push(...inlineParts)
-      } else {
-        parts.push(
-          <ReactMarkdown
-            key={`text-final`}
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
-            components={{
-              pre: ({ node, ...props }) => <pre className="p-2 rounded bg-muted/80 overflow-auto" {...props} />,
-              code: ({ node, className, children, ...props }) => {
-                const match = /language-(\w+)/.exec(className || "")
-                return match ? (
-                  <code className={className} {...props}>
-                    {children}
-                  </code>
-                ) : (
-                  <code className="bg-muted/50 px-1 py-0.5 rounded text-sm" {...props}>{children}</code>
-                )
-              },
-              a: ({ node, ...props }) => (
-                <a className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
-              ),
-            }}
-          >
-            {remainingContent}
-          </ReactMarkdown>,
-        )
-      }
-    }
-
-    return parts
-  }
 
   if (isSystem) {
     return (
@@ -244,7 +71,54 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
             maxWidth: "85%",
           }}
         >
-          <div className="whitespace-pre-wrap leading-relaxed font-tiempos">{isSystem ? message.content : processedContent}</div>
+          <div className="whitespace-pre-wrap leading-relaxed font-tiempos">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
+              components={{
+                p({ children }) {
+                  return <p className="mb-2 last:mb-0">{children}</p>
+                },
+                code({ node, inline, className, children, ...props }: any) {
+                  const [isCopied, setIsCopied] = useState(false)
+                  const match = /language-(\w+)/.exec(className || "")
+
+                  const handleCopy = () => {
+                    if (isCopied) return
+                    navigator.clipboard.writeText(String(children)).then(() => {
+                      setIsCopied(true)
+                      setTimeout(() => setIsCopied(false), 2000)
+                    })
+                  }
+
+                  return !inline && match ? (
+                    <div className="relative my-4 rounded-md bg-zinc-900/70 border border-zinc-700/50">
+                      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-700/50">
+                        <span className="text-xs font-sans text-zinc-400">{match[1]}</span>
+                        <Button variant="ghost" size="icon" onClick={handleCopy} className="h-7 w-7">
+                          {isCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                      <pre className="p-4 whitespace-pre-wrap break-all">
+                        <code className={cn("font-mono text-sm", className)} {...props}>
+                          {children}
+                        </code>
+                      </pre>
+                    </div>
+                  ) : (
+                    <code
+                      className="px-1 py-0.5 rounded-md bg-zinc-700/50 text-sm font-mono"
+                      {...props}
+                    >
+                      {children}
+                    </code>
+                  )
+                },
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
           {message.pending && (
             <div className="flex items-center mt-3 text-zinc-400">
               <Loader className="h-3 w-3 animate-spin mr-2" />
