@@ -6,6 +6,7 @@ export interface Message {
   pending?: boolean
   error?: boolean
   system?: boolean
+  runtimeStats?: string
 }
 
 export interface Conversation {
@@ -43,6 +44,7 @@ export interface WebLLMModel {
       max_tokens?: number
       stream?: boolean
       callback?: (chunk: string) => void
+      onCompletion?: (stats: { runtimeStats: string }) => void
     },
   ) => Promise<string>
 }

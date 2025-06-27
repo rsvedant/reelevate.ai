@@ -28,7 +28,7 @@ const nextConfig = {
       test: /\.svg$/,
       exclude: path.resolve(process.cwd(), 'app/icon0.svg'),
       use: ["@svgr/webpack"],
-    });
+    })
 
     if (!isServer) {
       config.resolve.fallback = {
@@ -45,7 +45,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: "/:path*",
         headers: [
           {
             key: "Cross-Origin-Embedder-Policy",
@@ -59,12 +59,15 @@ const nextConfig = {
       },
     ]
   },
+
   eslint: {
     ignoreDuringBuilds: true,
   },
+
   // typescript: {
   //   ignoreBuildErrors: true,
   // },
+
   images: {
     unoptimized: true,
   },

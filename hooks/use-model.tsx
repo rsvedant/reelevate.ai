@@ -231,6 +231,7 @@ export function useModel() {
                 const completion = await engine.chat.completions.create({
                   ...completionOptions,
                   stream: true,
+                  stream_options: { include_usage: true },
                 })
 
                 console.log("Streaming completion created, processing chunks")
@@ -240,6 +241,10 @@ export function useModel() {
                     console.log("Received chunk:", content)
                     fullResponse += content
                     options.callback(content)
+                  }
+                  if (chunk.usage && options.onCompletion) {
+                    const stats = await engine.runtimeStatsText()
+                    options.onCompletion({ runtimeStats: stats })
                   }
                 }
                 console.log("Streaming completed, full response:", fullResponse)

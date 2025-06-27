@@ -120,6 +120,7 @@ export default function ChatInterface({
       ]
 
       let accumulatedContent = ""
+      let messageFinalized = false
 
       if (streamingEnabled) {
         await model.chatCompletion(conversationHistory, {
@@ -133,6 +134,15 @@ export default function ChatInterface({
             )
             updateMessages(updatedMessages)
           },
+          onCompletion: (stats: { runtimeStats: string }) => {
+            const finalMessages = newMessages.map((msg, index) =>
+              index === newMessages.length - 1
+                ? { ...msg, pending: false, content: accumulatedContent, runtimeStats: stats.runtimeStats }
+                : msg,
+            )
+            updateMessages(finalMessages)
+            messageFinalized = true
+          },
         })
       } else {
         accumulatedContent = await model.chatCompletion(conversationHistory, {
@@ -142,10 +152,14 @@ export default function ChatInterface({
         })
       }
 
-      const finalMessages = newMessages.map((msg, index) =>
-        index === newMessages.length - 1 && msg.pending ? { ...msg, pending: false, content: accumulatedContent } : msg,
-      )
-      updateMessages(finalMessages)
+      if (!messageFinalized) {
+        const finalMessages = newMessages.map((msg, index) =>
+          index === newMessages.length - 1 && msg.pending
+            ? { ...msg, pending: false, content: accumulatedContent }
+            : msg,
+        )
+        updateMessages(finalMessages)
+      }
     } catch (error) {
       setError(`Error generating response: ${error}`)
       console.error("Error generating response:", error)

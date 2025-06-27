@@ -73,10 +73,15 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
               <span className="text-xs">Thinking...</span>
             </div>
           )}
+          {!isUser && message.runtimeStats && (
+            <div className="mt-3 border-t border-zinc-700/50 pt-2 text-xs text-zinc-400 font-mono">
+              <pre className="whitespace-pre-wrap">{message.runtimeStats}</pre>
+            </div>
+          )}
         </div>
 
         {/* Timestamp */}
-        <div className={cn("text-xs text-zinc-500 px-1", isUser ? "text-right" : "text-left")}>
+        <div className={cn("text-xs text-zinc-500 px-1 pt-1", isUser ? "text-right" : "text-left")}>
           {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </div>
       </div>
