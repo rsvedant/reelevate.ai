@@ -342,7 +342,7 @@ export default function ChatInterface({
                 value={input}
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
-                placeholder={isModelLoaded ? "Ask for reel ideas..." : "Please load a model first..."}
+                placeholder={isModelLoaded ? "Enter your prompt here..." : "Please load a model first..."}
                 className="min-h-[60px] max-h-[200px] pr-14 resize-none bg-zinc-800 border-zinc-700 focus:border-white focus-visible:ring-0 focus-visible:ring-offset-0 rounded-xl text-white placeholder-zinc-400 font-tiempos"
                 disabled={isGenerating || !isModelLoaded || isModelLoading}
               />
