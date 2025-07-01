@@ -30,3 +30,10 @@ export const extractThinkingContent = (content: string) => {
 
   return { content: processedContent.trim(), thinking: thinking.trim() }
 }
+
+export function truncateString(str: string, maxLength: number) {
+  if (str.length <= maxLength) {
+    return str
+  }
+  return str.slice(0, maxLength) + ".."
+}

@@ -9,6 +9,7 @@ import { useIndexedDB } from "@/hooks/use-indexed-db"
 import { Toaster } from "@/components/ui/toaster"
 import { Button } from "@/components/ui/button"
 import { PanelLeftOpen } from "lucide-react"
+import { truncateString } from "@/lib/utils"
 
 export default function ChatLayout() {
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -92,12 +93,16 @@ export default function ChatLayout() {
   }
 
   const generateConversationTitle = (firstUserMessage: string, firstAiResponse: string) => {
-    // Use the first user message to generate a title, but make it more concise
-    const userMessageWords = firstUserMessage.trim().split(" ")
-    if (userMessageWords.length <= 6) {
-      return firstUserMessage
-    }
-    return userMessageWords.slice(0, 6).join(" ") + "..."
+    const cleanText = firstUserMessage
+      .replace(/(\r\n|\n|\r)/gm, " ")
+      .replace(/```[\s\S]*?```/g, "")
+      .replace(/`[^`]*`/g, "")
+      .replace(/[#*_[\]()$-]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+
+    const title = cleanText || "New Conversation"
+    return truncateString(title, 25)
   }
 
   const updateConversation = async (conversationId: string, updates: Partial<Conversation>) => {
