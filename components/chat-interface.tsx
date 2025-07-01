@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast"
 import { v4 as uuidv4 } from "uuid"
 import type { Message, Conversation } from "@/lib/types"
 import { SYSTEM_PROMPT } from "@/lib/constants"
+import { extractThinkingContent } from "@/lib/utils"
 import { Loader, Send, ChevronDown, Cpu, Sparkles, Plus, StopCircle, StickyNoteIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -136,15 +137,27 @@ export default function ChatInterface({
           stream: true,
           callback: (chunk: string) => {
             accumulatedContent += chunk
+            const { content, thinking } = extractThinkingContent(accumulatedContent)
+            const isCurrentlyThinking = accumulatedContent.includes("<think>")
             const updatedMessages = newMessages.map((msg, index) =>
-              index === newMessages.length - 1 && msg.pending ? { ...msg, content: accumulatedContent } : msg,
+              index === newMessages.length - 1 && msg.pending
+                ? { ...msg, content, thinking, isThinking: isCurrentlyThinking }
+                : msg,
             )
             updateMessages(updatedMessages)
           },
           onCompletion: (stats: { runtimeStats: string }) => {
+            const { content, thinking } = extractThinkingContent(accumulatedContent)
             const finalMessages = newMessages.map((msg, index) =>
               index === newMessages.length - 1
-                ? { ...msg, pending: false, content: accumulatedContent, runtimeStats: stats.runtimeStats }
+                ? {
+                    ...msg,
+                    pending: false,
+                    content,
+                    thinking,
+                    runtimeStats: stats.runtimeStats,
+                    isThinking: !!thinking,
+                  }
                 : msg,
             )
             updateMessages(finalMessages)
@@ -160,9 +173,10 @@ export default function ChatInterface({
       }
 
       if (!messageFinalized) {
+        const { content, thinking } = extractThinkingContent(accumulatedContent)
         const finalMessages = newMessages.map((msg, index) =>
           index === newMessages.length - 1 && msg.pending
-            ? { ...msg, pending: false, content: accumulatedContent }
+            ? { ...msg, pending: false, content, thinking, isThinking: !!thinking }
             : msg,
         )
         updateMessages(finalMessages)

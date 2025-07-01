@@ -7,6 +7,8 @@ export interface Message {
   error?: boolean
   system?: boolean
   runtimeStats?: string
+  thinking?: string
+  isThinking?: boolean
 }
 
 export interface Conversation {

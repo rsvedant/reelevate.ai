@@ -3,9 +3,27 @@
 import { useState } from "react"
 import type { Message } from "@/lib/types"
 import { cn } from "@/lib/utils"
-import { Loader, Copy, RotateCcw, Trash2, MoreHorizontal, User, Bot, Edit, Check } from "lucide-react"
+import {
+  Loader,
+  Copy,
+  RotateCcw,
+  Trash2,
+  MoreHorizontal,
+  User,
+  Bot,
+  Edit,
+  Check,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Card } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkMath from "remark-math"
@@ -20,8 +38,10 @@ interface ChatMessageProps {
 export default function ChatMessage({ message, onAction }: ChatMessageProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [showThinking, setShowThinking] = useState(false)
   const isUser = message.role === "user"
   const isSystem = message.system
+  const hasThinking = message.isThinking || (!!message.thinking && message.thinking.trim().length > 0)
 
   if (isSystem) {
     return (
@@ -57,6 +77,30 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
 
       {/* Message Content */}
       <div className={cn("flex-1 space-y-1 min-w-0 max-w-[calc(100%-5rem)]", isUser ? "flex flex-col items-end" : "")}>
+        {hasThinking && !isUser && (
+          <div className="mb-2 max-w-[85%]">
+            <Button
+              variant="outline"
+              size="sm"
+              className="mb-2 w-full flex justify-between items-center text-xs border-zinc-700/50 hover:bg-zinc-800"
+              onClick={() => setShowThinking(!showThinking)}
+            >
+              <span className="flex items-center">
+                {showThinking ? <ChevronDown className="h-3 w-3 mr-1" /> : <ChevronRight className="h-3 w-3 mr-1" />}
+                Thinking...
+              </span>
+              <span className="text-zinc-400">See reasoning</span>
+            </Button>
+
+            {showThinking && (
+              <Card className="p-3 bg-zinc-800/50 text-sm text-zinc-300 mb-3 whitespace-pre-wrap border-zinc-700/50">
+                <div className="prose prose-sm max-w-none prose-p:my-0 prose-pre:my-2 prose-pre:bg-zinc-900/70 dark:prose-invert">
+                  <ReactMarkdown>{message.thinking!}</ReactMarkdown>
+                </div>
+              </Card>
+            )}
+          </div>
+        )}
         <div
           className={cn(
             "rounded-2xl px-4 py-3 break-words hyphens-auto relative",
