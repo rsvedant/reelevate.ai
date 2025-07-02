@@ -2,26 +2,24 @@ import path from 'path'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    turbo: {
-      rules: {
-        "**/*.svg": {
-          as: "*.js",
-          loaders: ["@svgr/webpack"],
-        },
+  turbopack: {
+    rules: {
+      "**/*.svg": {
+        as: "*.js",
+        loaders: ["@svgr/webpack"],
       },
     },
   },
   webpack: (config, { isServer }) => {
-
     config.experiments = {
       ...config.experiments,
       asyncWebAssembly: true,
+      topLevelAwait: true,
     }
 
     config.module.rules.push({
       test: /\.wasm$/,
-      type: "webassembly/async",
+      type: "asset/resource",
     })
 
     config.module.rules.push({

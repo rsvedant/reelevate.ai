@@ -6,8 +6,7 @@
       "esnext"
     ],
     "allowJs": true,
-    "target": "ES6",
-    "target": "ES6",
+    "target": "es2017",
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
