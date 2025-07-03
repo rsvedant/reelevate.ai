@@ -47,8 +47,7 @@ import {
   Smartphone,
   Monitor
 } from "lucide-react"
-import { KokoroTTS } from "kokoro-js"
-import { pipeline, AutomaticSpeechRecognitionOutput, ProgressCallback, ProgressInfo } from "@huggingface/transformers"
+import type { AutomaticSpeechRecognitionOutput, ProgressInfo } from "@huggingface/transformers"
 
 // Utility functions
 function formatTimestamp(seconds: number) {
@@ -261,6 +260,7 @@ export function ReelGenerator() {
     try {
       // Step 1: Generate Audio
       updateGenerationStep('audio', 'processing', 10)
+      const { KokoroTTS } = await import("kokoro-js")
       const tts = await KokoroTTS.from_pretrained(
         "onnx-community/Kokoro-82M-v1.0-ONNX",
         { device: "webgpu", dtype: "fp32" }
@@ -282,6 +282,7 @@ export function ReelGenerator() {
       // Step 2: Generate Subtitles
       updateGenerationStep('subtitles', 'processing', 10)
       
+      const { pipeline } = await import("@huggingface/transformers")
       const transcriber = await pipeline(
         "automatic-speech-recognition",
         "Xenova/whisper-small",
@@ -302,7 +303,7 @@ export function ReelGenerator() {
         return_timestamps: "word",
         chunk_length_s: 30,
         stride_length_s: 5,
-      })
+      }) as AutomaticSpeechRecognitionOutput | AutomaticSpeechRecognitionOutput[]
       
       // Handle both array and single result cases from the speech recognition output
       const chunks = Array.isArray(output) 
