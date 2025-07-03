@@ -26,14 +26,12 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { 
   Play, 
   Pause, 
   Download, 
   Upload, 
   Wand2, 
-  Settings, 
   Eye, 
   Volume2,
   FileText,
@@ -46,12 +44,11 @@ import {
   Maximize,
   Square,
   Smartphone,
-  Monitor,
-  Info
+  Monitor
 } from "lucide-react"
-import { KokoroTTS } from "kokoro-js"
-import type { ProgressInfo } from "@huggingface/transformers"
+import Image from "next/image"
 import { fetchFile } from "@ffmpeg/util"
+import type { ProgressInfo } from "@huggingface/transformers"
 
 function useTypewriter(text: string, enabled: boolean, speed: number = 50) {
   const [displayText, setDisplayText] = useState("")
@@ -85,6 +82,46 @@ function formatTimestamp(seconds: number) {
   const s = Math.floor(seconds % 60).toString().padStart(2, "0")
   const ms = Math.floor((seconds % 1) * 1000).toString().padStart(3, "0")
   return `${h}:${m}:${s}.${ms}`
+}
+
+function groupWords(
+  chunks: any[], 
+  maxWordsPerLine: number = 4, 
+  maxDuration: number = 4
+): any[] {
+  if (!chunks || chunks.length === 0) return []
+
+  const lines: any[] = []
+  let currentLine: any[] = []
+
+  chunks.forEach((word, index) => {
+    const lineDuration = currentLine.length > 0
+      ? word.timestamp[1] - currentLine[0].timestamp[0]
+      : 0
+
+    if (currentLine.length === 0) {
+      currentLine.push(word)
+    } else if (currentLine.length < maxWordsPerLine && lineDuration < maxDuration) {
+      currentLine.push(word)
+    } else {
+      lines.push({
+        text: currentLine.map(w => w.text).join("").trim(),
+        timestamp: [currentLine[0].timestamp[0], currentLine[currentLine.length - 1].timestamp[1]],
+        words: [...currentLine]
+      })
+      currentLine = [word]
+    }
+
+    if (index === chunks.length - 1) {
+      lines.push({
+        text: currentLine.map(w => w.text).join("").trim(),
+        timestamp: [currentLine[0].timestamp[0], currentLine[currentLine.length - 1].timestamp[1]],
+        words: [...currentLine]
+      })
+    }
+  })
+  
+  return lines
 }
 
 function encodeWAV(samples: Float32Array, sampleRate: number) {
@@ -156,6 +193,10 @@ type SubtitleStyle = {
   strokeColor: string
   position: 'top' | 'center' | 'bottom'
   animation: 'none' | 'fade' | 'slide' | 'pop' | 'typewriter'
+  backgroundEnabled: boolean
+  boxBorderWidth: number
+  boxBorderColor: string
+  boxPadding: number
 }
 
 type GenerationStep = {
@@ -187,10 +228,14 @@ const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
   fontWeight: 'bold',
   color: '#FFFFFF',
   textOpacity: 1,
-  strokeWidth: 2,
+  strokeWidth: 1.2,
   strokeColor: '#000000',
-  position: 'bottom',
-  animation: 'fade'
+  position: 'center',
+  animation: 'fade',
+  backgroundEnabled: false,
+  boxBorderWidth: 1.2,
+  boxBorderColor: '#FFFFFF',
+  boxPadding: 4,
 }
 
 export function ReelGenerator() {
@@ -223,6 +268,7 @@ export function ReelGenerator() {
   const [vttUrl, setVttUrl] = useState<string | null>(null)
   const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null)
   const [activeSubtitleChunk, setActiveSubtitleChunk] = useState<any | null>(null)
+  const [activeWord, setActiveWord] = useState<any | null>(null)
   
   const [activeTab, setActiveTab] = useState("script")
   const [isPlaying, setIsPlaying] = useState(false)
@@ -232,6 +278,8 @@ export function ReelGenerator() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
   const videoPreviewRef = useRef<HTMLDivElement>(null)
+  const ttsRef = useRef<any>(null)
+  const transcriberRef = useRef<any>(null)
 
   const [videoPlayerSize, setVideoPlayerSize] = useState({ width: 0, height: 0 })
 
@@ -298,19 +346,30 @@ export function ReelGenerator() {
     let ffmpeg: any = null
 
     try {
-
-      const { KokoroTTS } = await import('kokoro-js')
       updateGenerationStep('audio', 'processing', 10)
-      const tts = await KokoroTTS.from_pretrained(
-        "onnx-community/Kokoro-82M-v1.0-ONNX",
-        { device: "webgpu", dtype: "fp32" }
-      )
-      updateGenerationStep('audio', 'processing', 40)
+
+      if (!ttsRef.current) {
+        const { KokoroTTS } = await import('kokoro-js')
+        ttsRef.current = await KokoroTTS.from_pretrained(
+          "onnx-community/Kokoro-82M-v1.0-ONNX",
+          {
+            device: "webgpu",
+            dtype: "fp32",
+            progress_callback: (progressInfo: ProgressInfo) => {
+              if (progressInfo.status === 'progress') {
+                const progress = 10 + (progressInfo.progress * 0.7) 
+                updateGenerationStep('audio', 'processing', progress)
+              }
+            }
+          }
+        )
+      }
+      const tts = ttsRef.current
       
       const raw = await tts.generate(script, { voice: voice })
       const result = raw.audio
       const sampleRate = raw.sampling_rate || 24000
-      updateGenerationStep('audio', 'processing', 80)
+      updateGenerationStep('audio', 'processing', 90)
 
       const wav = encodeWAV(result, sampleRate)
       const blob = new Blob([wav], { type: "audio/wav" })
@@ -320,23 +379,25 @@ export function ReelGenerator() {
       updateGenerationStep('audio', 'completed', 100)
 
       updateGenerationStep('subtitles', 'processing', 10)
-	
-      const { pipeline } = await import('@huggingface/transformers')
-      const transcriber = await pipeline(
-        "automatic-speech-recognition",
-        "Xenova/whisper-small",
-        {
-          dtype: 'fp32',
-          device: 'webgpu',
-          progress_callback: (progressInfo: ProgressInfo) => {
-            if ('status' in progressInfo && progressInfo.status === 'progress') {
-              const progress = 10 + (progressInfo.progress * 0.8)
-              updateGenerationStep('subtitles', 'processing', progress)
+
+      if (!transcriberRef.current) {
+        const { pipeline } = await import('@huggingface/transformers')
+        transcriberRef.current = await pipeline(
+          "automatic-speech-recognition",
+          "Xenova/whisper-small",
+          {
+            dtype: 'fp32',
+            device: 'webgpu',
+            progress_callback: (progressInfo: ProgressInfo) => {
+              if ('status' in progressInfo && progressInfo.status === 'progress') {
+                const progress = 10 + (progressInfo.progress * 0.8)
+                updateGenerationStep('subtitles', 'processing', progress)
+              }
             }
           }
-        }
-      )
-      updateGenerationStep('subtitles', 'processing', 90)
+        )
+      }
+      const transcriber = transcriberRef.current
       
       const output = await transcriber(audioUrl, {
         return_timestamps: "word",
@@ -349,9 +410,10 @@ export function ReelGenerator() {
         : (output.chunks || [])
       
       const safeChunks = chunks || []
-      setSubtitles(safeChunks)
+      const sentenceChunks = groupWords(safeChunks)
+      setSubtitles(sentenceChunks)
 
-      const vttContent = generateAdvancedVTT(safeChunks, subtitleStyle)
+      const vttContent = generateAdvancedVTT(sentenceChunks, subtitleStyle)
       const vttBlob = new Blob([vttContent], { type: "text/vtt" })
       setVttUrl(URL.createObjectURL(vttBlob))
       
@@ -393,7 +455,7 @@ export function ReelGenerator() {
         await ffmpeg.writeFile('input.mp4', await fetchFile(backgroundVideo))
         await ffmpeg.writeFile('audio.wav', await fetchFile(blob))
         
-        const assContent = generateASS(safeChunks, subtitleStyle, videoSize)
+        const assContent = generateASS(sentenceChunks, subtitleStyle, videoSize)
         await ffmpeg.writeFile('subs.ass', assContent)
 
         await ffmpeg.exec([
@@ -505,12 +567,17 @@ export function ReelGenerator() {
     fontSize: `${style.fontSize}px`,
     fontWeight: style.fontWeight,
     color: hexToRgba(style.color, style.textOpacity),
-    WebkitTextStroke: `${style.strokeWidth}px ${style.strokeColor}`,
+    WebkitTextStroke: style.backgroundEnabled ? 'none' : `${style.strokeWidth}px ${style.strokeColor}`,
     paintOrder: 'stroke fill',
     display: 'inline-block',
     whiteSpace: 'pre-wrap',
     lineHeight: '1.2',
-    textShadow: `1px 1px 2px #000000cc`,
+    textShadow: style.backgroundEnabled ? 'none' : `1px 1px 2px #000000cc`,
+    backgroundColor: 'transparent',
+    padding: '0',
+    borderRadius: '0',
+    border: 'none',
+    transition: 'color 0.2s ease, opacity 0.2s ease',
   })
 
   const isTypewriterEffect = subtitleStyle.animation === 'typewriter'
@@ -527,7 +594,9 @@ export function ReelGenerator() {
     return {
       ...getSubtitleTextStyle(style),
       fontSize: `${style.fontSize * scale}px`,
-      WebkitTextStroke: `${style.strokeWidth * scale}px ${style.strokeColor}`,
+      padding: style.backgroundEnabled ? `${style.boxPadding * scale}px` : '0',
+      border: style.backgroundEnabled ? `${style.boxBorderWidth * scale}px solid ${style.boxBorderColor}` : 'none',
+      WebkitTextStroke: style.backgroundEnabled ? 'none' : `${style.strokeWidth * scale}px ${style.strokeColor}`,
     }
   }
 
@@ -545,17 +614,17 @@ export function ReelGenerator() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-zinc-900 text-white p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Wand2 className="w-8 h-8 text-primary" />
+            <Image src="/reelevate.png" alt="Reelevate Logo" className="text-primary" height={32} width={32} />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
               Reelevate.AI
             </h1>
           </div>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
             Create professional-quality video reels with AI-powered voiceovers and dynamic subtitles
           </p>
         </div>
@@ -565,9 +634,9 @@ export function ReelGenerator() {
           <div className="xl:col-span-2">
             {/* Progress Indicator */}
             {isGenerating && (
-              <Card className="mb-6 border-blue-800 bg-secondary">
+              <Card className="mb-6 border-zinc-700 bg-zinc-800">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-blue-300">
+                  <CardTitle className="flex items-center gap-2 text-zinc-100">
                     <Zap className="w-5 h-5" />
                     Generating Your Reel
                   </CardTitle>
@@ -580,7 +649,7 @@ export function ReelGenerator() {
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-medium">{step.name}</span>
-                            <span className="text-xs text-muted-foreground">{step.progress}%</span>
+                            <span className="text-xs text-zinc-400">{step.progress}%</span>
                           </div>
                           <Progress value={step.progress} className="h-2" />
                         </div>
@@ -593,37 +662,37 @@ export function ReelGenerator() {
 
             {/* Main Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5 mb-6">
-                <TabsTrigger value="script" className="flex items-center gap-2">
+              <TabsList className="bg-zinc-800 grid w-full grid-cols-5 mb-6">
+                <TabsTrigger value="script" className="flex items-center gap-2 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">
                   <FileText className="w-4 h-4" />
                   Script
                 </TabsTrigger>
-                <TabsTrigger value="voice" className="flex items-center gap-2">
+                <TabsTrigger value="voice" className="flex items-center gap-2 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">
                   <Volume2 className="w-4 h-4" />
                   Voice
                 </TabsTrigger>
-                <TabsTrigger value="background" className="flex items-center gap-2">
+                <TabsTrigger value="background" className="flex items-center gap-2 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">
                   <Upload className="w-4 h-4" />
                   Media
                 </TabsTrigger>
-                <TabsTrigger value="style" className="flex items-center gap-2">
+                <TabsTrigger value="style" className="flex items-center gap-2 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">
                   <Palette className="w-4 h-4" />
                   Style
                 </TabsTrigger>
-                <TabsTrigger value="generate" className="flex items-center gap-2">
+                <TabsTrigger value="generate" className="flex items-center gap-2 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">
                   <Wand2 className="w-4 h-4" />
                   Generate
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="script">
-                <Card>
+                <Card className="bg-zinc-800 border-zinc-700">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-purple-400" />
+                      <FileText className="w-5 h-5" />
                       Craft Your Script
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-zinc-400">
                       Write compelling content that captures attention. Aim for 15-60 seconds of narration.
                     </CardDescription>
                   </CardHeader>
@@ -637,10 +706,10 @@ export function ReelGenerator() {
                           value={script}
                           onChange={(e) => setScript(e.target.value)}
                           rows={8}
-                          className="mt-2"
+                          className="mt-2 bg-zinc-700 border-zinc-600 text-white placeholder-zinc-400"
                         />
                       </div>
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center justify-between text-sm text-zinc-400">
                         <span>{script.length} characters</span>
                         <span>~{calculateEstimatedDuration(script)} seconds</span>
                       </div>
@@ -650,7 +719,7 @@ export function ReelGenerator() {
                     <Button 
                       onClick={nextTab} 
                       disabled={!canProceed.script}
-                      className="ml-auto"
+                      className="ml-auto bg-white text-black hover:bg-white/90"
                     >
                       Next: Choose Voice
                     </Button>
@@ -659,13 +728,13 @@ export function ReelGenerator() {
               </TabsContent>
 
               <TabsContent value="voice">
-                <Card>
+                <Card className="bg-zinc-800 border-zinc-700">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Volume2 className="w-5 h-5 text-blue-400" />
+                      <Volume2 className="w-5 h-5" />
                       Select Voice Character
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-zinc-400">
                       Choose the perfect voice to bring your story to life.
                     </CardDescription>
                   </CardHeader>
@@ -676,8 +745,8 @@ export function ReelGenerator() {
                           key={option.value}
                           className={`p-4 border rounded-lg cursor-pointer transition-all ${
                             voice === option.value
-                              ? 'border-blue-500 bg-blue-900/50 ring-2 ring-blue-500'
-                              : 'border-border hover:border-blue-700'
+                              ? 'border-zinc-500 bg-zinc-700/50 ring-2 ring-zinc-500'
+                              : 'border-zinc-700 hover:border-zinc-500'
                           }`}
                           onClick={() => setVoice(option.value as Voice)}
                         >
@@ -693,7 +762,7 @@ export function ReelGenerator() {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button onClick={nextTab} className="ml-auto">
+                    <Button onClick={nextTab} className="ml-auto bg-white text-black hover:bg-white/90">
                       Next: Upload Media
                     </Button>
                   </CardFooter>
@@ -701,13 +770,13 @@ export function ReelGenerator() {
               </TabsContent>
 
               <TabsContent value="background">
-                <Card>
+                <Card className="bg-zinc-800 border-zinc-700">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Upload className="w-5 h-5 text-green-400" />
+                      <Upload className="w-5 h-5" />
                       Background Media
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-zinc-400">
                       Upload your background video to create the perfect visual story.
                     </CardDescription>
                   </CardHeader>
@@ -721,14 +790,14 @@ export function ReelGenerator() {
                               key={size.name}
                               className={`p-3 border rounded-lg cursor-pointer transition-all text-center ${
                                 videoSize.name === size.name
-                                  ? 'border-green-500 bg-green-900/50 ring-2 ring-green-500'
-                                  : 'border-border hover:border-green-700'
+                                  ? 'border-zinc-500 bg-zinc-700/50 ring-2 ring-zinc-500'
+                                  : 'border-zinc-700 hover:border-zinc-500'
                               }`}
                               onClick={() => setVideoSize(size)}
                             >
-                              <size.icon className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                              <size.icon className="w-6 h-6 mx-auto mb-2 text-zinc-400" />
                               <div className="text-sm font-medium">{size.aspectRatio}</div>
-                              <div className="text-xs text-muted-foreground">{size.name}</div>
+                              <div className="text-xs text-zinc-400">{size.name}</div>
                             </div>
                           ))}
                         </div>
@@ -736,24 +805,24 @@ export function ReelGenerator() {
                       
                       <div>
                         <Label htmlFor="background-video">Upload Video</Label>
-                        <div className="mt-2 border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-gray-600 transition-colors">
-                          <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                        <div className="mt-2 border-2 border-dashed border-zinc-700 rounded-lg p-8 text-center hover:border-zinc-600 transition-colors">
+                          <Upload className="w-12 h-12 mx-auto text-zinc-400 mb-4" />
                           <Input
                             id="background-video"
                             type="file"
                             accept="video/*"
                             onChange={handleVideoChange}
-                            className="max-w-xs mx-auto"
+                            className="bg-black max-w-xs mx-auto"
                           />
-                          <p className="text-sm text-muted-foreground mt-2">
+                          <p className="text-sm text-zinc-400 mt-2">
                             Supports MP4, MOV, AVI files
                           </p>
                         </div>
                         {backgroundVideo && (
-                          <div className="mt-4 p-3 bg-green-900/50 border border-green-700 rounded-lg">
+                          <div className="mt-4 p-3 bg-zinc-700/50 border border-zinc-700 rounded-lg">
                             <div className="flex items-center gap-2">
                               <CheckCircle className="w-4 h-4 text-green-400" />
-                              <span className="text-sm font-medium text-green-300">
+                              <span className="text-sm font-medium text-zinc-300">
                                 {backgroundVideo.name}
                               </span>
                             </div>
@@ -766,7 +835,7 @@ export function ReelGenerator() {
                     <Button 
                       onClick={nextTab} 
                       disabled={!canProceed.background}
-                      className="ml-auto"
+                      className="ml-auto bg-white text-black hover:bg-white/90"
                     >
                       Next: Customize Style
                     </Button>
@@ -775,13 +844,13 @@ export function ReelGenerator() {
               </TabsContent>
 
               <TabsContent value="style">
-                <Card>
+                <Card className="bg-zinc-800 border-zinc-700">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Palette className="w-5 h-5 text-pink-400" />
+                      <Palette className="w-5 h-5" />
                       Subtitle Styling
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-zinc-400">
                       Customize how your subtitles look to match your brand.
                     </CardDescription>
                   </CardHeader>
@@ -798,7 +867,7 @@ export function ReelGenerator() {
                             step={2}
                             className="mt-2"
                           />
-                          <div className="text-sm text-muted-foreground mt-1">{subtitleStyle.fontSize}px</div>
+                          <div className="text-sm text-zinc-400 mt-1">{subtitleStyle.fontSize}px</div>
                         </div>
                         
                         <div>
@@ -809,13 +878,13 @@ export function ReelGenerator() {
                               setSubtitleStyle(prev => ({ ...prev, position: value }))
                             }
                           >
-                            <SelectTrigger className="mt-2">
+                            <SelectTrigger className="mt-2 bg-zinc-700 border-zinc-600">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="top">Top</SelectItem>
-                              <SelectItem value="center">Center</SelectItem>
-                              <SelectItem value="bottom">Bottom</SelectItem>
+                            <SelectContent className="bg-zinc-800 border-zinc-700 text-white">
+                              <SelectItem value="top" className="focus:bg-zinc-700">Top</SelectItem>
+                              <SelectItem value="center" className="focus:bg-zinc-700">Center</SelectItem>
+                              <SelectItem value="bottom" className="focus:bg-zinc-700">Bottom</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -827,13 +896,17 @@ export function ReelGenerator() {
                           {['none', 'fade', 'slide', 'pop', 'typewriter'].map((animation) => (
                             <Button
                               key={animation}
-                              variant={subtitleStyle.animation === animation ? "default" : "outline"}
+                              variant="outline"
                               size="sm"
                               onClick={() => setSubtitleStyle(prev => ({ 
                                 ...prev, 
                                 animation: animation as SubtitleStyle['animation'] 
                               }))}
-                              className="capitalize"
+                              className={`capitalize w-full ${
+                                subtitleStyle.animation === animation 
+                                ? 'bg-white text-black hover:bg-white/90 hover:text-black' 
+                                : 'border-zinc-700 hover:bg-zinc-700 bg-zinc-800'
+                              }`}
                             >
                               {animation}
                             </Button>
@@ -851,14 +924,36 @@ export function ReelGenerator() {
                       </div>
 
                       {showAdvancedOptions && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-secondary rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-zinc-900 rounded-lg">
+                          {!subtitleStyle.backgroundEnabled && (
+                            <>
+                              <div>
+                                <Label>Text Stroke Color</Label>
+                                <Input
+                                  type="color"
+                                  value={subtitleStyle.strokeColor}
+                                  onChange={(e) => setSubtitleStyle(prev => ({ ...prev, strokeColor: e.target.value }))}
+                                  className="mt-2 h-10 w-full bg-zinc-800"
+                                />
+                              </div>
+                              <div>
+                                <Label>Text Stroke Width</Label>
+                                <Slider
+                                  value={[subtitleStyle.strokeWidth]}
+                                  onValueChange={([value]) => setSubtitleStyle(prev => ({ ...prev, strokeWidth: value }))}
+                                  min={0} max={8} step={0.5}
+                                  className="mt-2"
+                                />
+                              </div>
+                            </>
+                          )}
                           <div>
                             <Label>Text Color</Label>
                             <Input
                               type="color"
                               value={subtitleStyle.color}
                               onChange={(e) => setSubtitleStyle(prev => ({ ...prev, color: e.target.value }))}
-                              className="mt-2 h-10"
+                              className="mt-2 h-10 w-full bg-zinc-800"
                             />
                           </div>
                           <div>
@@ -870,30 +965,52 @@ export function ReelGenerator() {
                               className="mt-2"
                             />
                           </div>
-                          <div>
-                            <Label>Stroke Color</Label>
-                            <Input
-                              type="color"
-                              value={subtitleStyle.strokeColor}
-                              onChange={(e) => setSubtitleStyle(prev => ({ ...prev, strokeColor: e.target.value }))}
-                              className="mt-2 h-10"
+                          
+                          <div className="col-span-2 flex items-center space-x-2 pt-4 border-t border-zinc-700 mt-4">
+                            <Switch
+                              id="background-enabled"
+                              checked={subtitleStyle.backgroundEnabled}
+                              onCheckedChange={(checked) => setSubtitleStyle(prev => ({ ...prev, backgroundEnabled: checked }))}
                             />
+                            <Label htmlFor="background-enabled">Enable Subtitle Box</Label>
                           </div>
-                          <div>
-                            <Label>Stroke Width</Label>
-                            <Slider
-                              value={[subtitleStyle.strokeWidth]}
-                              onValueChange={([value]) => setSubtitleStyle(prev => ({ ...prev, strokeWidth: value }))}
-                              min={0} max={8} step={0.5}
-                              className="mt-2"
-                            />
-                          </div>
+                          {subtitleStyle.backgroundEnabled && (
+                            <>
+                              <div>
+                                <Label>Box Border Color</Label>
+                                <Input
+                                  type="color"
+                                  value={subtitleStyle.boxBorderColor}
+                                  onChange={(e) => setSubtitleStyle(prev => ({ ...prev, boxBorderColor: e.target.value }))}
+                                  className="mt-2 h-10 w-full bg-zinc-800"
+                                />
+                              </div>
+                              <div>
+                                <Label>Box Border Width</Label>
+                                <Slider
+                                  value={[subtitleStyle.boxBorderWidth]}
+                                  onValueChange={([value]) => setSubtitleStyle(prev => ({ ...prev, boxBorderWidth: value }))}
+                                  min={0} max={5} step={0.1}
+                                  className="mt-2"
+                                />
+                              </div>
+                              <div className="col-span-2">
+                                <Label>Box Padding</Label>
+                                <Slider
+                                  value={[subtitleStyle.boxPadding]}
+                                  onValueChange={([value]) => setSubtitleStyle(prev => ({ ...prev, boxPadding: value }))}
+                                  min={0} max={24} step={2}
+                                  className="mt-2"
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button onClick={nextTab} className="ml-auto">
+                    <Button onClick={nextTab} className="ml-auto bg-white text-black hover:bg-white/90">
                       Next: Generate Reel
                     </Button>
                   </CardFooter>
@@ -901,13 +1018,13 @@ export function ReelGenerator() {
               </TabsContent>
 
               <TabsContent value="generate">
-                <Card>
+                <Card className="bg-zinc-800 border-zinc-700">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Wand2 className="w-5 h-5 text-purple-400" />
+                      <Wand2 className="w-5 h-5" />
                       Generate Your Reel
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-zinc-400">
                       Review your settings and create your professional reel.
                     </CardDescription>
                   </CardHeader>
@@ -915,31 +1032,31 @@ export function ReelGenerator() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
                             <span className="text-sm font-medium">Script Length</span>
                             <Badge variant="secondary">{script.length} chars</Badge>
                           </div>
-                          <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
                             <span className="text-sm font-medium">Voice</span>
                             <Badge variant="secondary">{VOICE_OPTIONS.find(v => v.value === voice)?.label}</Badge>
                           </div>
-                          <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
                             <span className="text-sm font-medium">Video Size</span>
                             <Badge variant="secondary">{videoSize.aspectRatio}</Badge>
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
                             <span className="text-sm font-medium">Background</span>
                             <Badge variant={backgroundVideo ? "default" : "destructive"}>
                               {backgroundVideo ? "Uploaded" : "Missing"}
                             </Badge>
                           </div>
-                          <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
                             <span className="text-sm font-medium">Subtitle Style</span>
                             <Badge variant="secondary">{subtitleStyle.animation}</Badge>
                           </div>
-                          <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
                             <span className="text-sm font-medium">Models</span>
                             <Badge variant={"default"}>
                               Ready
@@ -953,7 +1070,7 @@ export function ReelGenerator() {
                     <Button
                       variant="outline"
                       onClick={() => setActiveTab("script")}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 border-zinc-700 hover:bg-zinc-700"
                     >
                       <RotateCcw className="w-4 h-4" />
                       Review Settings
@@ -961,7 +1078,7 @@ export function ReelGenerator() {
                     <Button
                       onClick={generateReel}
                       disabled={!canProceed.generate || isGenerating}
-                      className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                      className="flex items-center gap-2 bg-white text-black hover:bg-white/90"
                     >
                       {isGenerating ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -979,11 +1096,11 @@ export function ReelGenerator() {
           {/* Preview Panel */}
           <div className="xl:col-span-1">
             <div className="sticky top-4">
-              <Card className="mb-4">
+              <Card className="mb-4 bg-zinc-800 border-zinc-700">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
-                      <Eye className="w-5 h-5 text-indigo-400" />
+                      <Eye className="w-5 h-5" />
                       {finalVideoUrl ? "Final Video" : "Live Preview"}
                     </CardTitle>
                     <div className="flex items-center gap-2">
@@ -991,6 +1108,7 @@ export function ReelGenerator() {
                         variant="outline"
                         size="sm"
                         onClick={() => setPreviewMode(previewMode === 'mobile' ? 'desktop' : 'mobile')}
+                        className="border-zinc-700 hover:bg-zinc-700 bg-zinc-800"
                       >
                         {previewMode === 'mobile' ? <Monitor className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
                       </Button>
@@ -1019,9 +1137,16 @@ export function ReelGenerator() {
                             }
                             if (subtitles) {
                               const activeChunk = (subtitles as any[]).find(
-                                (chunk: any) => time >= chunk.timestamp[0] && time < chunk.timestamp[1]
+                                (chunk: any) => time >= chunk.timestamp[0] && time <= chunk.timestamp[1]
                               )
                               setActiveSubtitleChunk(activeChunk || null)
+                              
+                              if (activeChunk) {
+                                const currentWord = activeChunk.words.find((word: any) => time >= word.timestamp[0] && time <= word.timestamp[1])
+                                setActiveWord(currentWord || null)
+                              } else {
+                                setActiveWord(null)
+                              }
                             }
                           }}
                         />
@@ -1032,23 +1157,82 @@ export function ReelGenerator() {
                         {/* Live Subtitle Overlay - only shows before final video is generated */}
                         {!finalVideoUrl && (
                           <div style={getSubtitleContainerStyle(subtitleStyle)}>
-                            {activeSubtitleChunk && (
+                            {activeSubtitleChunk ? (
                               <p 
                                 key={activeSubtitleChunk.timestamp[0]}
                                 style={getScaledSubtitleStyle(subtitleStyle)}
-                                className={!isTypewriterEffect ? `animate-${subtitleStyle.animation}` : ''}
+                                className={`
+                                  ${!isTypewriterEffect ? `animate-${subtitleStyle.animation}` : ''}
+                                  ${subtitleStyle.backgroundEnabled ? 'flex flex-wrap justify-center items-center' : ''}
+                                `}
                               >
-                                {isTypewriterEffect ? typewriterText : activeSubtitleChunk.text}
+                                {isTypewriterEffect ? typewriterText : activeSubtitleChunk.words.map((word: any, index: number) => {
+                                  const isActive = activeWord && activeWord.timestamp[0] === word.timestamp[0]
+                                  const scale = videoPlayerSize.width / videoSize.width
+                                  const scaledPadding = (subtitleStyle.boxPadding || 0) * scale
+                                  const scaledBorderWidth = (subtitleStyle.boxBorderWidth || 0) * scale
+
+                                  const wordStyle: React.CSSProperties = {
+                                    transition: 'opacity 0.2s ease',
+                                    opacity: isActive ? 1 : 0.7,
+                                    display: 'inline-block',
+                                    margin: '0 0.08em',
+                                  }
+
+                                  if (subtitleStyle.backgroundEnabled) {
+                                    wordStyle.padding = `${scaledPadding}px`
+                                    wordStyle.borderRadius = '0.25em'
+                                    wordStyle.border = `${scaledBorderWidth}px solid ${isActive ? subtitleStyle.boxBorderColor : 'transparent'}`
+                                  }
+
+                                  return (
+                                    <span key={index} style={wordStyle}>
+                                      {word.text}
+                                    </span>
+                                  )
+                                })}
                               </p>
-                            )}
+                            ) : script ? (
+                              <p
+                                style={getScaledSubtitleStyle(subtitleStyle)}
+                                className={`
+                                  ${subtitleStyle.backgroundEnabled ? 'flex flex-wrap justify-center items-center' : ''}
+                                `}
+                              >
+                                {(script.split(' ').slice(0, 7)).map((word, index) => {
+                                  const isActive = index === 0
+                                  const scale = videoPlayerSize.width / videoSize.width
+                                  const scaledPadding = (subtitleStyle.boxPadding || 0) * scale
+                                  const scaledBorderWidth = (subtitleStyle.boxBorderWidth || 0) * scale
+
+                                  const wordStyle: React.CSSProperties = {
+                                    opacity: isActive ? 1 : 0.7,
+                                    display: 'inline-block',
+                                    margin: '0 0.08em',
+                                  }
+
+                                  if (subtitleStyle.backgroundEnabled) {
+                                    wordStyle.padding = `${scaledPadding}px`
+                                    wordStyle.borderRadius = '0.25em'
+                                    wordStyle.border = `${scaledBorderWidth}px solid ${isActive ? subtitleStyle.boxBorderColor : 'transparent'}`
+                                  }
+                                  
+                                  return (
+                                    <span key={index} style={wordStyle}>
+                                      {word}
+                                    </span>
+                                  )
+                                })}
+                              </p>
+                            ) : null }
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className={`mx-auto bg-secondary rounded-lg flex items-center justify-center ${
+                      <div className={`mx-auto bg-black rounded-lg flex items-center justify-center ${
                         previewMode === 'mobile' ? 'aspect-[9/16] max-w-[200px]' : 'aspect-[16/9] w-full'
                       }`}>
-                        <div className="text-center text-muted-foreground">
+                        <div className="text-center text-zinc-400">
                           <Upload className="w-8 h-8 mx-auto mb-2" />
                           <p className="text-sm">Upload video to preview</p>
                         </div>
@@ -1061,7 +1245,7 @@ export function ReelGenerator() {
                           variant="outline"
                           size="sm"
                           onClick={handlePlayPause}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 border-zinc-700 hover:bg-zinc-700 bg-zinc-800"
                         >
                           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                           {isPlaying ? "Pause" : "Play"}
@@ -1071,7 +1255,7 @@ export function ReelGenerator() {
                           size="sm"
                           onClick={downloadReel}
                           disabled={!finalVideoUrl && !generatedAudioUrl}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 border-zinc-700 hover:bg-zinc-700 bg-zinc-800"
                         >
                           <Download className="w-4 h-4" />
                           {finalVideoUrl ? 'Download Video' : 'Download Audio'}
@@ -1084,16 +1268,16 @@ export function ReelGenerator() {
 
               {/* Generated Assets */}
               {(generatedAudioUrl || subtitles) && (
-                <Card>
+                <Card className="bg-zinc-800 border-zinc-700">
                   <CardHeader>
                     <CardTitle className="text-lg">Generated Assets</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {generatedAudioUrl && (
-                      <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg">
+                      <div className="p-3 bg-zinc-900 border border-zinc-700 rounded-lg">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Volume2 className="w-4 h-4 text-green-400" />
+                            <Volume2 className="w-4 h-4 text-zinc-300" />
                             <span className="text-sm font-medium">Audio Track</span>
                           </div>
                           <CheckCircle className="w-4 h-4 text-green-400" />
@@ -1108,16 +1292,16 @@ export function ReelGenerator() {
                     )}
                     
                     {subtitles && (
-                      <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
+                      <div className="p-3 bg-zinc-900 border border-zinc-700 rounded-lg">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-blue-400" />
+                            <FileText className="w-4 h-4 text-zinc-300" />
                             <span className="text-sm font-medium">Subtitles</span>
                           </div>
                           <Badge variant="secondary">{subtitles.length} segments</Badge>
                         </div>
                         <div className="mt-2 max-h-32 overflow-y-auto">
-                          <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                          <pre className="text-xs text-zinc-400 whitespace-pre-wrap">
                             {subtitles.slice(0, 3).map((sub, i) => (
                               `${i + 1}. ${sub.text.trim()}\n`
                             )).join('')}
@@ -1131,30 +1315,30 @@ export function ReelGenerator() {
               )}
 
               {/* Quick Stats */}
-              <Card>
+              <Card className="bg-zinc-800 border-zinc-700">
                 <CardHeader>
                   <CardTitle className="text-lg">Quick Stats</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Estimated Duration</span>
+                      <span className="text-sm text-zinc-400">Estimated Duration</span>
                       <span className="text-sm font-medium">~{calculateEstimatedDuration(script)}s</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Output Format</span>
+                      <span className="text-sm text-zinc-400">Output Format</span>
                       <span className="text-sm font-medium">{videoSize.aspectRatio}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Resolution</span>
+                      <span className="text-sm text-zinc-400">Resolution</span>
                       <span className="text-sm font-medium">{videoSize.width}×{videoSize.height}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Voice Model</span>
+                      <span className="text-sm text-zinc-400">Voice Model</span>
                       <span className="text-sm font-medium">Kokoro TTS</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Subtitle Model</span>
+                      <span className="text-sm text-zinc-400">Subtitle Model</span>
                       <span className="text-sm font-medium">Whisper Small</span>
                     </div>
                   </div>
@@ -1182,14 +1366,33 @@ function generateASS(chunks: any[], style: SubtitleStyle, videoSize: VideoSize):
     // ASS alpha is 00=opaque, FF=transparent.
     // CSS opacity is 1=opaque, 0=transparent.
     // This formula converts CSS opacity to ASS alpha.
+    const safeHex = hex || '#000000'
     const alpha = Math.round((1 - opacity) * 255).toString(16).toUpperCase().padStart(2, '0')
-    const bbggrr = `${hex.substring(5, 7)}${hex.substring(3, 5)}${hex.substring(1, 3)}`
+    const bbggrr = `${safeHex.substring(5, 7)}${safeHex.substring(3, 5)}${safeHex.substring(1, 3)}`
     return `&H${alpha}${bbggrr}`
   }
 
+  const scale = videoSize.height / 720
+  const scaledFontSize = Math.round(style.fontSize * scale * 1.2)
+
   const primaryColour = convertColor(style.color, style.textOpacity)
-  const outlineColour = convertColor(style.strokeColor)
-  const backColour = convertColor('#000000', 0.5)
+  const secondaryColour = convertColor(style.color, style.textOpacity * 0.6)
+  
+  let backColour: string, outlineColour: string, borderStyle: number, outline: number, shadow: number
+  
+  if (style.backgroundEnabled) {
+    borderStyle = 3 // Opaque box
+    backColour = convertColor('#000000', 0)
+    outlineColour = convertColor(style.boxBorderColor)
+    outline = style.boxBorderWidth * scale * 1.5
+    shadow = style.boxPadding * scale * 1.5 // Padding
+  } else {
+    borderStyle = 1 // Outline + drop shadow
+    backColour = convertColor('#000000', 0.5) // Shadow color
+    outlineColour = convertColor(style.strokeColor)
+    outline = style.strokeWidth * scale * 1.5
+    shadow = outline / 2 // Shadow distance
+  }
 
   const header = `[Script Info]
 Title: Generated by Reelevate.AI
@@ -1200,7 +1403,7 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Tiempos Text Regular,${style.fontSize},${primaryColour},&H00FFFFFF,${outlineColour},${backColour},-1,0,0,0,100,100,0,0,1,${style.strokeWidth},${style.strokeWidth / 2},2,10,10,20,1
+Style: Default,Tiempos Text Regular,${scaledFontSize},${primaryColour},${secondaryColour},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},2,10,10,20,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -1212,37 +1415,20 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   const events = chunks.map(chunk => {
     const start = chunk.timestamp[0]
     const end = chunk.timestamp[1]
-    const text = chunk.text.trim()
-    let animatedText = ""
-
-    const animationDuration = 300 // ms
+    
+    let dialogueText = chunk.words.map((word: any) => {
+      const duration = (word.timestamp[1] - word.timestamp[0]) * 100
+      const tag = style.backgroundEnabled ? '\\ko' : '\\k'
+      return `{${tag}${Math.round(duration)}}${word.text.trim()}`
+    }).join(' ')
 
     switch (style.animation) {
       case 'fade':
-        animatedText = `{\\fad(${animationDuration},${animationDuration})}${text}`
+        dialogueText = `{\\fad(200,200)}${dialogueText}`
         break
-      case 'slide':
-        const y = style.position === 'top' ? 30 : (style.position === 'center' ? videoSize.height / 2 : videoSize.height - 30)
-        animatedText = `{\\move(${videoSize.width/2}, ${y+50}, ${videoSize.width/2}, ${y}, 0, ${animationDuration})}{\\fad(${animationDuration},${animationDuration})}${text}`
-        break
-      case 'pop':
-        animatedText = `{\\t(0,${animationDuration},\\fscx120\\fscy120\\fad(0,${animationDuration}))}${text}`
-        break
-      case 'typewriter':
-        const words = text.split(' ')
-        let wordStartTime = 0
-        animatedText = words.map((word: string, i: number) => {
-          const wordDuration = (word.length / 10) * 1000 // estimate duration based on length
-          const tag = `{\\k${wordStartTime > 0 ? wordStartTime/10 : 0}}`
-          wordStartTime += wordDuration
-          return `${tag}${word}`
-        }).join(' ')
-        break
-      default:
-        animatedText = text
     }
 
-    return `Dialogue: 0,${toAssTime(start)},${toAssTime(end)},Default,,0,0,0,,${positionTag}${animatedText}`
+    return `Dialogue: 0,${toAssTime(start)},${toAssTime(end)},Default,,0,0,0,,${positionTag}${dialogueText}`
   }).join('\n')
 
   return header + events
@@ -1265,11 +1451,11 @@ const toBlobURL = async (url: string, mimeType: string) => {
 }
 
 const toBlobURLPatched = async (url: string, mimeType: string, patcher: (code: string) => string) => {
-    const resp = await fetch(url)
-    let body = await resp.text()
-    if (patcher) {
-      body = patcher(body)
-    }
-    const blob = new Blob([body], { type: mimeType })
-    return URL.createObjectURL(blob)
+  const resp = await fetch(url)
+  let body = await resp.text()
+  if (patcher) {
+    body = patcher(body)
+  }
+  const blob = new Blob([body], { type: mimeType })
+  return URL.createObjectURL(blob)
 }
