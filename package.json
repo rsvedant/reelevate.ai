@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ffmpeg/util": "^0.12.2",
     "@hookform/resolvers": "^3.9.1",
     "@huggingface/transformers": "3.6.1",
     "@mlc-ai/web-llm": "latest",
