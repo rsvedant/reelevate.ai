@@ -26,6 +26,7 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { 
   Play, 
   Pause, 
@@ -45,11 +46,39 @@ import {
   Maximize,
   Square,
   Smartphone,
-  Monitor
+  Monitor,
+  Info
 } from "lucide-react"
-import type { AutomaticSpeechRecognitionOutput, ProgressInfo } from "@huggingface/transformers"
+import { KokoroTTS } from "kokoro-js"
+import type { ProgressInfo } from "@huggingface/transformers"
+import { fetchFile } from "@ffmpeg/util"
 
-// Utility functions
+function useTypewriter(text: string, enabled: boolean, speed: number = 50) {
+  const [displayText, setDisplayText] = useState("")
+
+  useEffect(() => {
+    if (!enabled || !text) {
+      setDisplayText(text || "")
+      return
+    }
+
+    setDisplayText("")
+    let i = 0
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setDisplayText(prev => prev + text.charAt(i))
+        i++
+      } else {
+        clearInterval(timer)
+      }
+    }, speed)
+
+    return () => clearInterval(timer)
+  }, [text, enabled, speed])
+
+  return displayText
+}
+
 function formatTimestamp(seconds: number) {
   const h = Math.floor(seconds / 3600).toString().padStart(2, "0")
   const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0")
@@ -93,7 +122,20 @@ function encodeWAV(samples: Float32Array, sampleRate: number) {
   return view
 }
 
-// Types
+function hexToRgba(hex: string, opacity: number): string {
+    let r = 0, g = 0, b = 0
+    if (hex.length === 4) {
+        r = parseInt(hex[1] + hex[1], 16)
+        g = parseInt(hex[2] + hex[2], 16)
+        b = parseInt(hex[3] + hex[3], 16)
+    } else if (hex.length === 7) {
+        r = parseInt(hex.slice(1, 3), 16)
+        g = parseInt(hex.slice(3, 5), 16)
+        b = parseInt(hex.slice(5, 7), 16)
+    }
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`
+}
+
 type Voice = "af_heart" | "af_bella" | "af_nicole" | "am_michael" | "bf_emma" | "bm_george"
 
 type VideoSize = {
@@ -109,9 +151,7 @@ type SubtitleStyle = {
   fontSize: number
   fontWeight: string
   color: string
-  backgroundColor: string
-  borderRadius: number
-  padding: number
+  textOpacity: number
   strokeWidth: number
   strokeColor: string
   position: 'top' | 'center' | 'bottom'
@@ -125,7 +165,6 @@ type GenerationStep = {
   progress: number
 }
 
-// Constants
 const VIDEO_SIZES: VideoSize[] = [
   { name: "9:16 (Shorts)", width: 1080, height: 1920, aspectRatio: "9:16", icon: Smartphone },
   { name: "16:9 (Landscape)", width: 1920, height: 1080, aspectRatio: "16:9", icon: Monitor },
@@ -143,13 +182,11 @@ const VOICE_OPTIONS = [
 ]
 
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
-  fontFamily: 'Inter, sans-serif',
+  fontFamily: 'Tiempos Text Regular, sans-serif',
   fontSize: 32,
   fontWeight: 'bold',
   color: '#FFFFFF',
-  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-  borderRadius: 8,
-  padding: 12,
+  textOpacity: 1,
   strokeWidth: 2,
   strokeColor: '#000000',
   position: 'bottom',
@@ -157,14 +194,21 @@ const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
 }
 
 export function ReelGenerator() {
-  // Core state
+  const calculateEstimatedDuration = (text: string): number => {
+    const WORDS_PER_SECOND = 2.5
+    if (!text || text.trim() === '') {
+      return 0
+    }
+    const wordCount = text.trim().split(/\s+/).length
+    return Math.ceil(wordCount / WORDS_PER_SECOND)
+  }
+
   const [script, setScript] = useState("Transform your ideas into captivating stories that resonate with millions. Every word matters, every frame counts.")
   const [voice, setVoice] = useState<Voice>("af_heart")
   const [backgroundVideo, setBackgroundVideo] = useState<File | null>(null)
   const [videoSize, setVideoSize] = useState<VideoSize>(VIDEO_SIZES[0])
   const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>(DEFAULT_SUBTITLE_STYLE)
   
-  // Generation state
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationSteps, setGenerationSteps] = useState<GenerationStep[]>([
     { id: 'audio', name: 'Generating Audio', status: 'pending', progress: 0 },
@@ -173,27 +217,24 @@ export function ReelGenerator() {
     { id: 'finalizing', name: 'Finalizing Reel', status: 'pending', progress: 0 },
   ])
   
-  // Media state
   const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null)
   const [subtitles, setSubtitles] = useState<any[] | null>(null)
   const [backgroundVideoUrl, setBackgroundVideoUrl] = useState<string | null>(null)
   const [vttUrl, setVttUrl] = useState<string | null>(null)
   const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null)
+  const [activeSubtitleChunk, setActiveSubtitleChunk] = useState<any | null>(null)
   
-  // UI state
   const [activeTab, setActiveTab] = useState("script")
   const [isPlaying, setIsPlaying] = useState(false)
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile')
   
-  // Refs
   const videoRef = useRef<HTMLVideoElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const videoPreviewRef = useRef<HTMLDivElement>(null)
 
-  // Models are now loaded on-demand inside the generateReel function
-  // to avoid loading them on page load and to fix function call errors.
+  const [videoPlayerSize, setVideoPlayerSize] = useState({ width: 0, height: 0 })
 
-  // Utility functions
   const updateGenerationStep = useCallback((stepId: string, status: GenerationStep['status'], progress: number) => {
     setGenerationSteps(prev => prev.map(step => 
       step.id === stepId ? { ...step, status, progress } : step
@@ -220,10 +261,8 @@ export function ReelGenerator() {
     vtt += `  font-size: ${style.fontSize}px;\n`
     vtt += `  font-weight: ${style.fontWeight};\n`
     vtt += `  color: ${style.color};\n`
-    vtt += `  background-color: ${style.backgroundColor};\n`
-    vtt += `  border-radius: ${style.borderRadius}px;\n`
-    vtt += `  padding: ${style.padding}px;\n`
     vtt += `  text-stroke: ${style.strokeWidth}px ${style.strokeColor};\n`
+    vtt += "  background-color: transparent;\n"
     vtt += "  text-align: center;\n"
     vtt += "  white-space: pre-line;\n"
     vtt += "}\n\n"
@@ -233,7 +272,6 @@ export function ReelGenerator() {
       vtt += `${index + 1}\n`
       vtt += `${formatTimestamp(start)} --> ${formatTimestamp(end)}\n`
       
-      // Add word-level emphasis for better readability
       const words = chunk.text.trim().split(' ')
       const emphasizedText = words.map((word: string, i: number) => {
         if (i === Math.floor(words.length / 2)) {
@@ -257,10 +295,12 @@ export function ReelGenerator() {
     setFinalVideoUrl(null)
     resetGenerationSteps()
 
+    let ffmpeg: any = null
+
     try {
-      // Step 1: Generate Audio
+
+      const { KokoroTTS } = await import('kokoro-js')
       updateGenerationStep('audio', 'processing', 10)
-      const { KokoroTTS } = await import("kokoro-js")
       const tts = await KokoroTTS.from_pretrained(
         "onnx-community/Kokoro-82M-v1.0-ONNX",
         { device: "webgpu", dtype: "fp32" }
@@ -279,10 +319,9 @@ export function ReelGenerator() {
       
       updateGenerationStep('audio', 'completed', 100)
 
-      // Step 2: Generate Subtitles
       updateGenerationStep('subtitles', 'processing', 10)
-      
-      const { pipeline } = await import("@huggingface/transformers")
+	
+      const { pipeline } = await import('@huggingface/transformers')
       const transcriber = await pipeline(
         "automatic-speech-recognition",
         "Xenova/whisper-small",
@@ -291,7 +330,7 @@ export function ReelGenerator() {
           device: 'webgpu',
           progress_callback: (progressInfo: ProgressInfo) => {
             if ('status' in progressInfo && progressInfo.status === 'progress') {
-              const progress = 10 + (progressInfo.progress * 0.8) // Map 0-100 to 10-90
+              const progress = 10 + (progressInfo.progress * 0.8)
               updateGenerationStep('subtitles', 'processing', progress)
             }
           }
@@ -303,29 +342,80 @@ export function ReelGenerator() {
         return_timestamps: "word",
         chunk_length_s: 30,
         stride_length_s: 5,
-      }) as AutomaticSpeechRecognitionOutput | AutomaticSpeechRecognitionOutput[]
+      })
       
-      // Handle both array and single result cases from the speech recognition output
       const chunks = Array.isArray(output) 
         ? output[0].chunks 
-        : (output.chunks || []);
+        : (output.chunks || [])
       
-      // Ensure chunks is always a valid array for TypeScript type checking
-      const safeChunks = chunks || [];
-      setSubtitles(safeChunks);
+      const safeChunks = chunks || []
+      setSubtitles(safeChunks)
 
-      const vttContent = generateAdvancedVTT(safeChunks, subtitleStyle);
-      const vttBlob = new Blob([vttContent], { type: "text/vtt" });
-      setVttUrl(URL.createObjectURL(vttBlob));
+      const vttContent = generateAdvancedVTT(safeChunks, subtitleStyle)
+      const vttBlob = new Blob([vttContent], { type: "text/vtt" })
+      setVttUrl(URL.createObjectURL(vttBlob))
       
       updateGenerationStep('subtitles', 'completed', 100)
 
-      // Step 3: Process Video
-      updateGenerationStep('processing', 'processing', 50)
-      await new Promise(resolve => setTimeout(resolve, 500))
+      updateGenerationStep('processing', 'processing', 0)
+      if (backgroundVideo) {
+        const baseURLFFMPEG = 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/umd'
+        const baseURLCore = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
+        
+        const ffmpegBlobURL = await toBlobURLPatched(
+          `${baseURLFFMPEG}/ffmpeg.js`,
+          'text/javascript',
+          (js) => js.replace('new URL(e.p+e.u(814),e.b)', 'r.worker814URL')
+        )
+        
+        await loadScript(ffmpegBlobURL)
+        
+        ffmpeg = new (window as any).FFmpegWASM.FFmpeg()
+
+        ffmpeg.on('log', ({ message }: { message: string }) => console.log(message))
+        ffmpeg.on('progress', ({ progress }: { progress: number }) => {
+          updateGenerationStep('processing', 'processing', Math.round(progress * 100))
+        })
+        
+        const config = {
+            worker814URL: await toBlobURL(`${baseURLFFMPEG}/814.ffmpeg.js`, 'text/javascript'),
+            coreURL: await toBlobURL(`${baseURLCore}/ffmpeg-core.js`, 'text/javascript'),
+            wasmURL: await toBlobURL(`${baseURLCore}/ffmpeg-core.wasm`, 'application/wasm'),
+        }
+        await ffmpeg.load(config)
+        
+        updateGenerationStep('processing', 'processing', 10)
+
+        await ffmpeg.createDir('/fonts')
+        const font = await fetchFile('https://db.onlinewebfonts.com/t/1b3f9cb78376a36884f3908f37a42c91.ttf')
+        await ffmpeg.writeFile('/fonts/Tiempos-Regular.ttf', font)
+
+        await ffmpeg.writeFile('input.mp4', await fetchFile(backgroundVideo))
+        await ffmpeg.writeFile('audio.wav', await fetchFile(blob))
+        
+        const assContent = generateASS(safeChunks, subtitleStyle, videoSize)
+        await ffmpeg.writeFile('subs.ass', assContent)
+
+        await ffmpeg.exec([
+          '-i', 'input.mp4',
+          '-i', 'audio.wav',
+          '-c:v', 'libx264',
+          '-c:a', 'aac',
+          '-map', '0:v:0',
+          '-map', '1:a:0',
+          '-vf', `subtitles=subs.ass:fontsdir=/fonts`,
+          '-preset', 'ultrafast',
+          '-shortest',
+          'output.mp4'
+        ])
+        
+        const data = await ffmpeg.readFile('output.mp4')
+        const finalBlob = new Blob([data], { type: 'video/mp4' })
+        setFinalVideoUrl(URL.createObjectURL(finalBlob))
+      }
+      
       updateGenerationStep('processing', 'completed', 100)
 
-      // Step 4: Finalize
       updateGenerationStep('finalizing', 'processing', 80)
       await new Promise(resolve => setTimeout(resolve, 300))
       updateGenerationStep('finalizing', 'completed', 100)
@@ -336,6 +426,13 @@ export function ReelGenerator() {
         step.status === 'processing' ? { ...step, status: 'error' } : step
       ))
     } finally {
+      if (ffmpeg) {
+        try {
+          await ffmpeg.terminate()
+        } catch (e) {
+          console.error("Failed to terminate ffmpeg", e)
+        }
+      }
       setIsGenerating(false)
     }
   }
@@ -352,13 +449,14 @@ export function ReelGenerator() {
   }, [isPlaying])
 
   const downloadReel = useCallback(() => {
-    if (generatedAudioUrl) {
+    const url = finalVideoUrl || generatedAudioUrl
+    if (url) {
       const a = document.createElement('a')
-      a.href = generatedAudioUrl
-      a.download = 'generated-reel-audio.wav'
+      a.href = url
+      a.download = finalVideoUrl ? 'generated-reel.mp4' : 'generated-reel-audio.wav'
       a.click()
     }
-  }, [generatedAudioUrl])
+  }, [finalVideoUrl, generatedAudioUrl])
 
   const getStepIcon = (step: GenerationStep) => {
     switch (step.status) {
@@ -384,6 +482,67 @@ export function ReelGenerator() {
     style: true,
     generate: script.trim().length > 0
   }
+
+  const getSubtitleContainerStyle = (style: SubtitleStyle): React.CSSProperties => {
+    const positionStyles: { [key in SubtitleStyle['position']]: React.CSSProperties } = {
+      top: { top: '10%' },
+      center: { top: '50%', transform: 'translate(-50%, -50%)' },
+      bottom: { bottom: '10%' },
+    }
+    return {
+      position: 'absolute',
+      left: '50%',
+      width: '90%',
+      textAlign: 'center',
+      pointerEvents: 'none',
+      transform: style.position === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)',
+      ...positionStyles[style.position],
+    }
+  }
+
+  const getSubtitleTextStyle = (style: SubtitleStyle): React.CSSProperties => ({
+    fontFamily: style.fontFamily,
+    fontSize: `${style.fontSize}px`,
+    fontWeight: style.fontWeight,
+    color: hexToRgba(style.color, style.textOpacity),
+    WebkitTextStroke: `${style.strokeWidth}px ${style.strokeColor}`,
+    paintOrder: 'stroke fill',
+    display: 'inline-block',
+    whiteSpace: 'pre-wrap',
+    lineHeight: '1.2',
+    textShadow: `1px 1px 2px #000000cc`,
+  })
+
+  const isTypewriterEffect = subtitleStyle.animation === 'typewriter'
+  const typewriterText = useTypewriter(
+    activeSubtitleChunk?.text || "",
+    isTypewriterEffect,
+    30
+  )
+
+  const getScaledSubtitleStyle = (style: SubtitleStyle): React.CSSProperties => {
+    const scale = videoPlayerSize.width / videoSize.width
+    if (isNaN(scale) || scale <= 0) return getSubtitleTextStyle(style)
+
+    return {
+      ...getSubtitleTextStyle(style),
+      fontSize: `${style.fontSize * scale}px`,
+      WebkitTextStroke: `${style.strokeWidth * scale}px ${style.strokeColor}`,
+    }
+  }
+
+  useEffect(() => {
+    const observer = new ResizeObserver(entries => {
+      if (entries[0]) {
+        const { width, height } = entries[0].contentRect
+        setVideoPlayerSize({ width, height })
+      }
+    })
+    if (videoPreviewRef.current) {
+      observer.observe(videoPreviewRef.current)
+    }
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -483,7 +642,7 @@ export function ReelGenerator() {
                       </div>
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span>{script.length} characters</span>
-                        <span>~{Math.ceil(script.length / 150)} seconds</span>
+                        <span>~{calculateEstimatedDuration(script)} seconds</span>
                       </div>
                     </div>
                   </CardContent>
@@ -587,7 +746,7 @@ export function ReelGenerator() {
                             className="max-w-xs mx-auto"
                           />
                           <p className="text-sm text-muted-foreground mt-2">
-                            Supports MP4, MOV, AVI files up to 100MB
+                            Supports MP4, MOV, AVI files
                           </p>
                         </div>
                         {backgroundVideo && (
@@ -703,36 +862,29 @@ export function ReelGenerator() {
                             />
                           </div>
                           <div>
-                            <Label>Background Color</Label>
-                            <Input
-                              type="color"
-                              value={subtitleStyle.backgroundColor.replace('rgba(0, 0, 0, 0.8)', '#000000')}
-                              onChange={(e) => setSubtitleStyle(prev => ({ 
-                                ...prev, 
-                                backgroundColor: `${e.target.value}CC` 
-                              }))}
-                              className="mt-2 h-10"
-                            />
-                          </div>
-                          <div>
-                            <Label>Border Radius</Label>
+                            <Label>Text Opacity</Label>
                             <Slider
-                              value={[subtitleStyle.borderRadius]}
-                              onValueChange={([value]) => setSubtitleStyle(prev => ({ ...prev, borderRadius: value }))}
-                              min={0}
-                              max={20}
-                              step={1}
+                              value={[subtitleStyle.textOpacity]}
+                              onValueChange={([value]) => setSubtitleStyle(prev => ({ ...prev, textOpacity: value }))}
+                              min={0} max={1} step={0.1}
                               className="mt-2"
                             />
                           </div>
                           <div>
-                            <Label>Padding</Label>
+                            <Label>Stroke Color</Label>
+                            <Input
+                              type="color"
+                              value={subtitleStyle.strokeColor}
+                              onChange={(e) => setSubtitleStyle(prev => ({ ...prev, strokeColor: e.target.value }))}
+                              className="mt-2 h-10"
+                            />
+                          </div>
+                          <div>
+                            <Label>Stroke Width</Label>
                             <Slider
-                              value={[subtitleStyle.padding]}
-                              onValueChange={([value]) => setSubtitleStyle(prev => ({ ...prev, padding: value }))}
-                              min={4}
-                              max={24}
-                              step={2}
+                              value={[subtitleStyle.strokeWidth]}
+                              onValueChange={([value]) => setSubtitleStyle(prev => ({ ...prev, strokeWidth: value }))}
+                              min={0} max={8} step={0.5}
                               className="mt-2"
                             />
                           </div>
@@ -832,7 +984,7 @@ export function ReelGenerator() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <Eye className="w-5 h-5 text-indigo-400" />
-                      Live Preview
+                      {finalVideoUrl ? "Final Video" : "Live Preview"}
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       <Button
@@ -846,88 +998,87 @@ export function ReelGenerator() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {backgroundVideoUrl ? (
-                    <div className={`mx-auto bg-black rounded-lg overflow-hidden ${
-                      previewMode === 'mobile' ? 'aspect-[9/16] max-w-[200px]' : 'aspect-[16/9] w-full'
-                    }`}>
-                      <video
-                        ref={videoRef}
-                        src={backgroundVideoUrl}
-                        className="w-full h-full object-cover"
-                        muted
-                        loop
-                        playsInline
-                        onTimeUpdate={(e) => {
-                          const time = e.currentTarget.currentTime
-                          if (audioRef.current) {
-                            audioRef.current.currentTime = time
-                          }
-                        }}
-                      >
-                        {vttUrl && (
-                          <track
-                            src={vttUrl}
-                            kind="subtitles"
-                            srcLang="en"
-                            label="English"
-                            default
-                          />
-                        )}
-                      </video>
-                      {generatedAudioUrl && (
-                        <audio ref={audioRef} src={generatedAudioUrl} />
-                      )}
-                      
-                      {/* Subtitle Preview Overlay */}
-                      <div className="absolute bottom-4 left-4 right-4 text-center">
-                        <div 
-                          className="inline-block px-3 py-2 rounded-lg text-white font-bold text-sm"
-                          style={{
-                            backgroundColor: subtitleStyle.backgroundColor,
-                            fontSize: `${Math.max(12, subtitleStyle.fontSize * 0.4)}px`,
-                            borderRadius: `${subtitleStyle.borderRadius}px`,
-                            padding: `${Math.max(4, subtitleStyle.padding * 0.5)}px ${subtitleStyle.padding * 0.7}px`
+                  <div ref={videoPreviewRef}>
+                    {backgroundVideoUrl ? (
+                      <div className={`relative mx-auto bg-black rounded-lg overflow-hidden ${
+                        previewMode === 'mobile' ? 'aspect-[9/16] max-w-[200px]' : 'aspect-[16/9] w-full'
+                      }`}>
+                        <video
+                          ref={videoRef}
+                          src={finalVideoUrl || backgroundVideoUrl}
+                          className="w-full h-full object-cover"
+                          muted={!finalVideoUrl}
+                          loop={!finalVideoUrl}
+                          playsInline
+                          controls={!!finalVideoUrl}
+                          onTimeUpdate={(e) => {
+                            if (finalVideoUrl) return
+                            const time = e.currentTarget.currentTime
+                            if (audioRef.current) {
+                              audioRef.current.currentTime = time
+                            }
+                            if (subtitles) {
+                              const activeChunk = (subtitles as any[]).find(
+                                (chunk: any) => time >= chunk.timestamp[0] && time < chunk.timestamp[1]
+                              )
+                              setActiveSubtitleChunk(activeChunk || null)
+                            }
                           }}
-                        >
-                          Sample subtitle text
+                        />
+                        {!finalVideoUrl && generatedAudioUrl && (
+                          <audio ref={audioRef} src={generatedAudioUrl} />
+                        )}
+                        
+                        {/* Live Subtitle Overlay - only shows before final video is generated */}
+                        {!finalVideoUrl && (
+                          <div style={getSubtitleContainerStyle(subtitleStyle)}>
+                            {activeSubtitleChunk && (
+                              <p 
+                                key={activeSubtitleChunk.timestamp[0]}
+                                style={getScaledSubtitleStyle(subtitleStyle)}
+                                className={!isTypewriterEffect ? `animate-${subtitleStyle.animation}` : ''}
+                              >
+                                {isTypewriterEffect ? typewriterText : activeSubtitleChunk.text}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className={`mx-auto bg-secondary rounded-lg flex items-center justify-center ${
+                        previewMode === 'mobile' ? 'aspect-[9/16] max-w-[200px]' : 'aspect-[16/9] w-full'
+                      }`}>
+                        <div className="text-center text-muted-foreground">
+                          <Upload className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">Upload video to preview</p>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className={`mx-auto bg-secondary rounded-lg flex items-center justify-center ${
-                      previewMode === 'mobile' ? 'aspect-[9/16] max-w-[200px]' : 'aspect-[16/9] w-full'
-                    }`}>
-                      <div className="text-center text-muted-foreground">
-                        <Upload className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">Upload video to preview</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {backgroundVideoUrl && (
-                    <div className="flex items-center gap-2 mt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePlayPause}
-                        className="flex items-center gap-2"
-                      >
-                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                        {isPlaying ? "Pause" : "Play"}
-                      </Button>
-                      {generatedAudioUrl && (
+                    )}
+                    
+                    {backgroundVideoUrl && (
+                      <div className="flex items-center gap-2 mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handlePlayPause}
+                          className="flex items-center gap-2"
+                        >
+                          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                          {isPlaying ? "Pause" : "Play"}
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={downloadReel}
+                          disabled={!finalVideoUrl && !generatedAudioUrl}
                           className="flex items-center gap-2"
                         >
                           <Download className="w-4 h-4" />
-                          Download
+                          {finalVideoUrl ? 'Download Video' : 'Download Audio'}
                         </Button>
-                      )}
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -988,7 +1139,7 @@ export function ReelGenerator() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Estimated Duration</span>
-                      <span className="text-sm font-medium">~{Math.ceil(script.length / 150)}s</span>
+                      <span className="text-sm font-medium">~{calculateEstimatedDuration(script)}s</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Output Format</span>
@@ -1015,4 +1166,110 @@ export function ReelGenerator() {
       </div>
     </div>
   )
+}
+
+function generateASS(chunks: any[], style: SubtitleStyle, videoSize: VideoSize): string {
+  const toAssTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600).toString()
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0')
+    const s = Math.floor(seconds % 60).toString().padStart(2, '0')
+    const ms = Math.floor((seconds % 1) * 100).toString().padStart(2, '0')
+    return `${h}:${m}:${s}.${ms}`
+  }
+
+  // Convert color from #RRGGBB to &HAABBGGRR for ASS
+  const convertColor = (hex: string, opacity: number = 1) => {
+    // ASS alpha is 00=opaque, FF=transparent.
+    // CSS opacity is 1=opaque, 0=transparent.
+    // This formula converts CSS opacity to ASS alpha.
+    const alpha = Math.round((1 - opacity) * 255).toString(16).toUpperCase().padStart(2, '0')
+    const bbggrr = `${hex.substring(5, 7)}${hex.substring(3, 5)}${hex.substring(1, 3)}`
+    return `&H${alpha}${bbggrr}`
+  }
+
+  const primaryColour = convertColor(style.color, style.textOpacity)
+  const outlineColour = convertColor(style.strokeColor)
+  const backColour = convertColor('#000000', 0.5)
+
+  const header = `[Script Info]
+Title: Generated by Reelevate.AI
+ScriptType: v4.00+
+PlayResX: ${videoSize.width}
+PlayResY: ${videoSize.height}
+WrapStyle: 0
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Tiempos Text Regular,${style.fontSize},${primaryColour},&H00FFFFFF,${outlineColour},${backColour},-1,0,0,0,100,100,0,0,1,${style.strokeWidth},${style.strokeWidth / 2},2,10,10,20,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`
+  
+  const alignmentMap = { top: '{\\an8}', center: '{\\an5}', bottom: '{\\an2}' }
+  const positionTag = alignmentMap[style.position]
+
+  const events = chunks.map(chunk => {
+    const start = chunk.timestamp[0]
+    const end = chunk.timestamp[1]
+    const text = chunk.text.trim()
+    let animatedText = ""
+
+    const animationDuration = 300 // ms
+
+    switch (style.animation) {
+      case 'fade':
+        animatedText = `{\\fad(${animationDuration},${animationDuration})}${text}`
+        break
+      case 'slide':
+        const y = style.position === 'top' ? 30 : (style.position === 'center' ? videoSize.height / 2 : videoSize.height - 30)
+        animatedText = `{\\move(${videoSize.width/2}, ${y+50}, ${videoSize.width/2}, ${y}, 0, ${animationDuration})}{\\fad(${animationDuration},${animationDuration})}${text}`
+        break
+      case 'pop':
+        animatedText = `{\\t(0,${animationDuration},\\fscx120\\fscy120\\fad(0,${animationDuration}))}${text}`
+        break
+      case 'typewriter':
+        const words = text.split(' ')
+        let wordStartTime = 0
+        animatedText = words.map((word: string, i: number) => {
+          const wordDuration = (word.length / 10) * 1000 // estimate duration based on length
+          const tag = `{\\k${wordStartTime > 0 ? wordStartTime/10 : 0}}`
+          wordStartTime += wordDuration
+          return `${tag}${word}`
+        }).join(' ')
+        break
+      default:
+        animatedText = text
+    }
+
+    return `Dialogue: 0,${toAssTime(start)},${toAssTime(end)},Default,,0,0,0,,${positionTag}${animatedText}`
+  }).join('\n')
+
+  return header + events
+}
+
+const loadScript = (url: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = url
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error(`Script load error for ${url}`))
+    document.head.appendChild(script)
+  })
+}
+
+const toBlobURL = async (url: string, mimeType: string) => {
+  const resp = await fetch(url)
+  const body = await resp.blob()
+  return URL.createObjectURL(new Blob([body], { type: mimeType }))
+}
+
+const toBlobURLPatched = async (url: string, mimeType: string, patcher: (code: string) => string) => {
+    const resp = await fetch(url)
+    let body = await resp.text()
+    if (patcher) {
+      body = patcher(body)
+    }
+    const blob = new Blob([body], { type: mimeType })
+    return URL.createObjectURL(blob)
 }
