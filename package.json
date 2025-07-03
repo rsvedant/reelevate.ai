@@ -67,16 +67,13 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "remark-rehype": "^11.1.2",
-    "sharp": "^0.33.4",
+    "sharp": "0.34.2",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "latest",
     "vaul": "^0.9.6",
     "zod": "^3.24.1"
-  },
-  "overrides": {
-    "@huggingface/transformers": "3.6.1"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",
