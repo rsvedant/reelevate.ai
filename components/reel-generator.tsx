@@ -481,7 +481,7 @@ export function ReelGenerator() {
       
       updateGenerationStep('audio', 'completed', 100)
 
-      updateGenerationStep('subtitles', 'processing', 90)
+      updateGenerationStep('subtitles', 'processing', 10)
 
       if (!transcriberRef.current) {
         const { pipeline } = await import('@huggingface/transformers')
