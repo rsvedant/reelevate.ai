@@ -238,6 +238,86 @@ const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
   boxPadding: 4,
 }
 
+const splitSentences = (text: string): string[] => {
+  if (!text) return []
+  // Split by sentences, keeping the delimiter. Also splits by newlines.
+  const sentences = text.match(/[^.!?\n]+([.!?\n]|$)/g) || []
+  return sentences.map(s => s.trim()).filter(s => s.length > 0)
+}
+
+function alignTranscription(originalScript: string, transcribedChunks: any[]): any[] {
+    const originalWords = originalScript.split(/\s+/).filter(Boolean);
+    const transcribedWordsInfo = transcribedChunks.map(chunk => ({
+        ...chunk,
+        word: chunk.text.trim(),
+    }));
+
+    const n = originalWords.length;
+    const m = transcribedWordsInfo.length;
+
+    if (n === 0 || m === 0) return [];
+
+    const dp = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0));
+    const pointers = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0)); // 0: diag, 1: up, 2: left
+
+    const normalize = (word: string) => word.toLowerCase().replace(/[.,!?""'"`]/g, '');
+
+    const matchScore = 2;
+    const mismatchPenalty = -1;
+    const gapPenalty = -1;
+
+    for (let i = 1; i <= n; i++) {
+        dp[i][0] = i * gapPenalty;
+        pointers[i][0] = 1;
+    }
+    for (let j = 1; j <= m; j++) {
+        dp[0][j] = j * gapPenalty;
+        pointers[0][j] = 2;
+    }
+
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            const score = normalize(originalWords[i - 1]) === normalize(transcribedWordsInfo[j - 1].word) ? matchScore : mismatchPenalty;
+            const diagScore = dp[i - 1][j - 1] + score;
+            const upScore = dp[i - 1][j] + gapPenalty;
+            const leftScore = dp[i][j - 1] + gapPenalty;
+
+            if (diagScore >= upScore && diagScore >= leftScore) {
+                dp[i][j] = diagScore;
+                pointers[i][j] = 0;
+            } else if (upScore >= leftScore) {
+                dp[i][j] = upScore;
+                pointers[i][j] = 1;
+            } else {
+                dp[i][j] = leftScore;
+                pointers[i][j] = 2;
+            }
+        }
+    }
+
+    const alignedChunks = [];
+    let i = n;
+    let j = m;
+
+    while (i > 0 && j > 0) {
+        const pointer = pointers[i][j];
+        if (pointer === 0) {
+            alignedChunks.unshift({
+                ...transcribedWordsInfo[j - 1],
+                text: ` ${originalWords[i - 1]}`,
+            });
+            i--;
+            j--;
+        } else if (pointer === 1) {
+            i--;
+        } else {
+            j--;
+        }
+    }
+
+    return alignedChunks;
+}
+
 export function ReelGenerator() {
   const calculateEstimatedDuration = (text: string): number => {
     const WORDS_PER_SECOND = 2.5
@@ -357,8 +437,8 @@ export function ReelGenerator() {
             dtype: "fp32",
             progress_callback: (progressInfo: ProgressInfo) => {
               if (progressInfo.status === 'progress') {
-                const progress = 10 + (progressInfo.progress * 0.7) 
-                updateGenerationStep('audio', 'processing', progress)
+                const modelLoadProgress = progressInfo.progress * 0.7 // 0-70%
+                updateGenerationStep('audio', 'processing', 10 + modelLoadProgress)
               }
             }
           }
@@ -366,10 +446,33 @@ export function ReelGenerator() {
       }
       const tts = ttsRef.current
       
-      const raw = await tts.generate(script, { voice: voice })
-      const result = raw.audio
-      const sampleRate = raw.sampling_rate || 24000
-      updateGenerationStep('audio', 'processing', 90)
+      // Chunk the script into sentences to handle long inputs
+      const sentences = splitSentences(script)
+      if (sentences.length === 0) throw new Error("Script is empty or could not be processed.")
+
+      const audioChunks: Float32Array[] = []
+      let sampleRate = 24000
+
+      const generationStartProgress = 80
+      const generationTotalProgress = 15 // 80% -> 95%
+
+      for (let i = 0; i < sentences.length; i++) {
+        const sentence = sentences[i]
+        const raw = await tts.generate(sentence, { voice: voice })
+        audioChunks.push(raw.audio)
+        sampleRate = raw.sampling_rate || 24000
+
+        const progress = generationStartProgress + (generationTotalProgress * (i + 1) / sentences.length)
+        updateGenerationStep('audio', 'processing', progress)
+      }
+      
+      const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0)
+      const result = new Float32Array(totalLength)
+      let offset = 0
+      for (const chunk of audioChunks) {
+        result.set(chunk, offset)
+        offset += chunk.length
+      }
 
       const wav = encodeWAV(result, sampleRate)
       const blob = new Blob([wav], { type: "audio/wav" })
@@ -378,7 +481,7 @@ export function ReelGenerator() {
       
       updateGenerationStep('audio', 'completed', 100)
 
-      updateGenerationStep('subtitles', 'processing', 10)
+      updateGenerationStep('subtitles', 'processing', 90)
 
       if (!transcriberRef.current) {
         const { pipeline } = await import('@huggingface/transformers')
@@ -410,7 +513,12 @@ export function ReelGenerator() {
         : (output.chunks || [])
       
       const safeChunks = chunks || []
-      const sentenceChunks = groupWords(safeChunks)
+      
+      updateGenerationStep('subtitles', 'processing', 98)
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const alignedChunks = alignTranscription(script, safeChunks)
+      const sentenceChunks = groupWords(alignedChunks)
       setSubtitles(sentenceChunks)
 
       const vttContent = generateAdvancedVTT(sentenceChunks, subtitleStyle)
@@ -614,7 +722,7 @@ export function ReelGenerator() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-zinc-900 text-white p-4">
+    <div className="min-h-screen bg-zinc-900 text-white p-4 pt-24">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

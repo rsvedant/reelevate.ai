@@ -4,6 +4,7 @@ import { Fira_Code } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
+import { GlassNav } from "@/components/glass-nav"
 
 const firaCode = Fira_Code({
   subsets: ["latin"],
@@ -46,6 +47,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-full flex justify-center px-4">
+            <GlassNav />
+          </div>
           {children}
         </ThemeProvider>
       </body>

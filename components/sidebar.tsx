@@ -101,7 +101,7 @@ export default function Sidebar({
   return (
     <div
       className={cn(
-        "bg-zinc-950 border-r border-zinc-800 flex flex-col transition-all duration-300 ease-in-out",
+        "bg-zinc-950 border-r border-zinc-800 flex flex-col transition-all duration-300 ease-in-out z-50",
         isOpen ? "w-80" : "w-20 items-center",
       )}
     >

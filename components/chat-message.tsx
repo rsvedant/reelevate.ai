@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import type { Message } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import {
@@ -29,19 +29,63 @@ import remarkGfm from "remark-gfm"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import "katex/dist/katex.min.css"
+import { Textarea } from "./ui/textarea"
 
 interface ChatMessageProps {
   message: Message
   onAction: (action: string) => void
+  isEditing: boolean
+  onSaveEdit: (content: string) => void
+  onCancelEdit: () => void
 }
 
-export default function ChatMessage({ message, onAction }: ChatMessageProps) {
+export default function ChatMessage({ message, onAction, isEditing, onSaveEdit, onCancelEdit }: ChatMessageProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [showThinking, setShowThinking] = useState(false)
+  const [editedContent, setEditedContent] = useState(message.content)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isUser = message.role === "user"
   const isSystem = message.system
   const hasThinking = message.isThinking || (!!message.thinking && message.thinking.trim().length > 0)
+
+  useEffect(() => {
+    if (isEditing) {
+      setEditedContent(message.content)
+      textareaRef.current?.focus()
+      // Auto-resize textarea
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto"
+        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+      }
+    }
+  }, [isEditing, message.content])
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedContent(e.target.value)
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto"
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+    }
+  }
+
+  const handleSave = () => {
+    if (editedContent.trim() && editedContent.trim() !== message.content) {
+      onSaveEdit(editedContent)
+    } else {
+      onCancelEdit()
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSave()
+    }
+    if (e.key === "Escape") {
+      onCancelEdit()
+    }
+  }
 
   if (isSystem) {
     return (
@@ -101,80 +145,100 @@ export default function ChatMessage({ message, onAction }: ChatMessageProps) {
             )}
           </div>
         )}
-        <div
-          className={cn(
-            "rounded-2xl px-4 py-3 break-words hyphens-auto relative",
-            "max-w-full overflow-hidden",
-            isUser
-              ? "bg-white/10 text-white shadow-lg"
-              : "bg-zinc-800 text-zinc-100 border border-zinc-700/50",
-          )}
-          style={{
-            wordBreak: "break-word",
-            overflowWrap: "break-word",
-            maxWidth: "85%",
-          }}
-        >
-          <div className="whitespace-pre-wrap leading-relaxed font-tiempos">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-              components={{
-                p({ children }) {
-                  return <p className="mb-2 last:mb-0">{children}</p>
-                },
-                code({ node, inline, className, children, ...props }: any) {
-                  const [isCopied, setIsCopied] = useState(false)
-                  const match = /language-(\w+)/.exec(className || "")
-
-                  const handleCopy = () => {
-                    if (isCopied) return
-                    navigator.clipboard.writeText(String(children)).then(() => {
-                      setIsCopied(true)
-                      setTimeout(() => setIsCopied(false), 2000)
-                    })
-                  }
-
-                  return !inline && match ? (
-                    <div className="relative my-4 rounded-md bg-zinc-900/70 border border-zinc-700/50">
-                      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-700/50">
-                        <span className="text-xs font-sans text-zinc-400">{match[1]}</span>
-                        <Button variant="ghost" size="icon" onClick={handleCopy} className="h-7 w-7">
-                          {isCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                      <pre className="p-4 whitespace-pre-wrap break-all">
-                        <code className={cn("font-mono text-sm", className)} {...props}>
-                          {children}
-                        </code>
-                      </pre>
-                    </div>
-                  ) : (
-                    <code
-                      className="px-1 py-0.5 rounded-md bg-zinc-700/50 text-sm font-mono"
-                      {...props}
-                    >
-                      {children}
-                    </code>
-                  )
-                },
-              }}
-            >
-              {message.content}
-            </ReactMarkdown>
+        {isEditing ? (
+          <div className="w-full max-w-[85%]">
+            <Textarea
+              ref={textareaRef}
+              value={editedContent}
+              onChange={handleContentChange}
+              onKeyDown={handleKeyDown}
+              className="w-full min-h-[60px] max-h-[400px] resize-none bg-zinc-800 border-zinc-700 focus:border-white focus-visible:ring-0 focus-visible:ring-offset-0 rounded-xl text-white placeholder-zinc-400"
+            />
+            <div className="mt-2 flex justify-end space-x-2">
+              <Button onClick={onCancelEdit} variant="ghost" size="sm">
+                Cancel
+              </Button>
+              <Button onClick={handleSave} size="sm">
+                Save & Submit
+              </Button>
+            </div>
           </div>
-          {message.pending && (
-            <div className="flex items-center mt-3 text-zinc-400">
-              <Loader className="h-3 w-3 animate-spin mr-2" />
-              <span className="text-xs">Thinking...</span>
+        ) : (
+          <div
+            className={cn(
+              "rounded-2xl px-4 py-3 break-words hyphens-auto relative",
+              "max-w-full overflow-hidden",
+              isUser
+                ? "bg-white/10 text-white shadow-lg"
+                : "bg-zinc-800 text-zinc-100 border border-zinc-700/50",
+            )}
+            style={{
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+              maxWidth: "85%",
+            }}
+          >
+            <div className="whitespace-pre-wrap leading-relaxed font-tiempos">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                components={{
+                  p({ children }) {
+                    return <p className="mb-2 last:mb-0">{children}</p>
+                  },
+                  code({ node, inline, className, children, ...props }: any) {
+                    const [isCopied, setIsCopied] = useState(false)
+                    const match = /language-(\w+)/.exec(className || "")
+
+                    const handleCopy = () => {
+                      if (isCopied) return
+                      navigator.clipboard.writeText(String(children)).then(() => {
+                        setIsCopied(true)
+                        setTimeout(() => setIsCopied(false), 2000)
+                      })
+                    }
+
+                    return !inline && match ? (
+                      <div className="relative my-4 rounded-md bg-zinc-900/70 border border-zinc-700/50">
+                        <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-700/50">
+                          <span className="text-xs font-sans text-zinc-400">{match[1]}</span>
+                          <Button variant="ghost" size="icon" onClick={handleCopy} className="h-7 w-7">
+                            {isCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                        <pre className="p-4 whitespace-pre-wrap break-all">
+                          <code className={cn("font-mono text-sm", className)} {...props}>
+                            {children}
+                          </code>
+                        </pre>
+                      </div>
+                    ) : (
+                      <code
+                        className="px-1 py-0.5 rounded-md bg-zinc-700/50 text-sm font-mono"
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    )
+                  },
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
             </div>
-          )}
-          {!isUser && message.runtimeStats && (
-            <div className="mt-3 border-t border-zinc-700/50 pt-2 text-xs text-zinc-400 font-mono">
-              <pre className="whitespace-pre-wrap">{message.runtimeStats}</pre>
-            </div>
-          )}
-        </div>
+            {message.pending && (
+              <div className="flex items-center mt-3 text-zinc-400">
+                <Loader className="h-3 w-3 animate-spin mr-2" />
+                <span className="text-xs">Thinking...</span>
+              </div>
+            )}
+            {!isUser && message.runtimeStats && (
+              <div className="mt-3 border-t border-zinc-700/50 pt-2 text-xs text-zinc-400 font-mono">
+                <pre className="whitespace-pre-wrap">{message.runtimeStats}</pre>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Timestamp */}
         <div className={cn("text-xs text-zinc-500 px-1 pt-1", isUser ? "text-right" : "text-left")}>

@@ -31,6 +31,7 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [showModelSelector, setShowModelSelector] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -82,18 +83,11 @@ export default function ChatInterface({
     }
   }
 
-  const sendMessage = async (content: string) => {
+  const generateAiResponse = async (messageHistory: Message[]) => {
     if (!isModelLoaded || !model || !conversation) {
       console.error("Model not loaded or no active conversation")
       setError("Model not loaded or no active conversation")
       return
-    }
-
-    const userMessage: Message = {
-      id: uuidv4(),
-      role: "user",
-      content,
-      timestamp: new Date().toISOString(),
     }
 
     const aiMessage: Message = {
@@ -104,34 +98,30 @@ export default function ChatInterface({
       pending: true,
     }
 
-    const newMessages = [...conversation.messages, userMessage, aiMessage]
+    const newMessages = [...messageHistory, aiMessage]
     updateMessages(newMessages)
 
     setIsGenerating(true)
 
     try {
-      const conversationHistory = [
+      const conversationHistoryForModel = [
         {
           role: "system",
           content: SYSTEM_PROMPT,
         },
-        ...conversation.messages
+        ...messageHistory
           .filter((msg) => !msg.pending && !msg.error)
           .map((msg) => ({
             role: msg.role,
             content: msg.content,
           })),
-        {
-          role: "user",
-          content,
-        },
       ]
 
       let accumulatedContent = ""
       let messageFinalized = false
 
       if (streamingEnabled) {
-        await model.chatCompletion(conversationHistory, {
+        await model.chatCompletion(conversationHistoryForModel, {
           temperature: 0.7,
           max_tokens: 800,
           stream: true,
@@ -165,7 +155,7 @@ export default function ChatInterface({
           },
         })
       } else {
-        accumulatedContent = await model.chatCompletion(conversationHistory, {
+        accumulatedContent = await model.chatCompletion(conversationHistoryForModel, {
           temperature: 0.7,
           max_tokens: 800,
           stream: false,
@@ -207,6 +197,22 @@ export default function ChatInterface({
     }
   }
 
+  const sendMessage = async (content: string) => {
+    if (!conversation) {
+      return
+    }
+
+    const userMessage: Message = {
+      id: uuidv4(),
+      role: "user",
+      content,
+      timestamp: new Date().toISOString(),
+    }
+
+    const messageHistory = [...conversation.messages, userMessage]
+    await generateAiResponse(messageHistory)
+  }
+
   const handleStop = () => {
     if (isGenerating || isModelLoading) {
       stop()
@@ -246,6 +252,26 @@ export default function ChatInterface({
     setShowModelSelector(false)
   }
 
+  const handleCancelEdit = () => {
+    setEditingMessageId(null)
+  }
+
+  const handleSaveEdit = async (messageId: string, newContent: string) => {
+    if (!conversation) return
+    const messageIndex = conversation.messages.findIndex((m) => m.id === messageId)
+    if (messageIndex === -1) return
+
+    const updatedMessages = conversation.messages.slice(0, messageIndex)
+    updatedMessages.push({
+      ...conversation.messages[messageIndex],
+      content: newContent,
+    })
+
+    updateMessages(updatedMessages)
+    setEditingMessageId(null)
+    await generateAiResponse(updatedMessages)
+  }
+
   const handleMessageAction = (messageId: string, action: string) => {
     if (!conversation) return
 
@@ -260,18 +286,15 @@ export default function ChatInterface({
         updateMessages(conversation.messages.filter((m) => m.id !== messageId))
         break
       case "regenerate":
+        if (!conversation) return
         const messageIndex = conversation.messages.findIndex((m) => m.id === messageId)
         if (messageIndex > 0) {
-          const previousUserMessage = conversation.messages[messageIndex - 1]
-          if (previousUserMessage.role === "user") {
-            const messagesUpToUser = conversation.messages.slice(0, messageIndex)
-            updateMessages(messagesUpToUser)
-            sendMessage(previousUserMessage.content)
-          }
+          const messageHistory = conversation.messages.slice(0, messageIndex - 1)
+          generateAiResponse(messageHistory)
         }
         break
       case "edit":
-        console.log("Edit functionality to be implemented")
+        setEditingMessageId(messageId)
         break
     }
   }
@@ -304,25 +327,8 @@ export default function ChatInterface({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-zinc-900">
-      {/* Header */}
-      <div className="border-b border-zinc-800 p-4 flex-shrink-0 bg-zinc-900/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-white">{conversation.title}</h1>
-            <p className="text-sm text-zinc-400">{conversation.messages.length} messages</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            {selectedModelRecord && (
-              <Badge variant="secondary" className="bg-zinc-800 text-zinc-300 border border-zinc-700">
-                {selectedModelRecord.name}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 pt-24">
         <div className="max-w-4xl mx-auto space-y-6 w-full">
           {conversation.messages.length === 0 ? (
             <div className="text-center py-16">
@@ -337,7 +343,10 @@ export default function ChatInterface({
               <ChatMessage
                 key={message.id}
                 message={message}
+                isEditing={editingMessageId === message.id}
                 onAction={(action) => handleMessageAction(message.id, action)}
+                onSaveEdit={(newContent) => handleSaveEdit(message.id, newContent)}
+                onCancelEdit={handleCancelEdit}
               />
             ))
           )}
