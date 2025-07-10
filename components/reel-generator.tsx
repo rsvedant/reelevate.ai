@@ -207,29 +207,30 @@ type GenerationStep = {
 }
 
 type GenerationState = {
-  isGenerating: boolean;
-  steps: GenerationStep[];
-  audioUrl: string | null;
-  subtitles: any[] | null;
-  finalVideoUrl: string | null;
-  error: Error | null;
-};
+  isGenerating: boolean
+  steps: GenerationStep[]
+  audioUrl: string | null
+  subtitles: any[] | null
+  finalVideoUrl: string | null
+  error: Error | null
+}
 
 type GenerationAction =
   | { type: 'START_GENERATION' }
-  | { type: 'UPDATE_STEP'; payload: { id: string; update: Partial<Omit<GenerationStep, 'id'>> } }
-  | { type: 'SET_AUDIO_URL'; payload: string | null }
-  | { type: 'SET_SUBTITLES'; payload: any[] | null }
-  | { type: 'SET_FINAL_VIDEO_URL'; payload: string | null }
+  | { type: 'UPDATE_STEP', payload: { id: string, update: Partial<Omit<GenerationStep, 'id'>> } }
+  | { type: 'SET_AUDIO_URL', payload: string | null }
+  | { type: 'SET_SUBTITLES', payload: any[] | null }
+  | { type: 'SET_FINAL_VIDEO_URL', payload: string | null }
   | { type: 'FINISH_GENERATION' }
-  | { type: 'ERROR'; payload: Error }
-  | { type: 'RESET' };
+  | { type: 'ERROR', payload: Error }
+  | { type: 'RESET' }
 
 const initialGenerationState: GenerationState = {
   isGenerating: false,
   steps: [
     { id: 'audio', name: 'Generating Audio', status: 'pending', progress: 0 },
-    { id: 'subtitles', name: 'Creating Subtitles', status: 'pending', progress: 0 },
+    { id: 'subtitles_encoding', name: 'Encoding Subtitles', status: 'pending', progress: 0 },
+    { id: 'subtitles_decoding', name: 'Decoding Subtitles', status: 'pending', progress: 0 },
     { id: 'processing', name: 'Processing Video', status: 'pending', progress: 0 },
     { id: 'finalizing', name: 'Finalizing Reel', status: 'pending', progress: 0 },
   ],
@@ -237,7 +238,7 @@ const initialGenerationState: GenerationState = {
   subtitles: null,
   finalVideoUrl: null,
   error: null,
-};
+}
 
 function generationReducer(state: GenerationState, action: GenerationAction): GenerationState {
   switch (action.type) {
@@ -245,22 +246,22 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
       return {
         ...initialGenerationState,
         isGenerating: true,
-      };
+      }
     case 'UPDATE_STEP':
       return {
         ...state,
         steps: state.steps.map(step =>
           step.id === action.payload.id ? { ...step, ...action.payload.update } : step
         ),
-      };
+      }
     case 'SET_AUDIO_URL':
-      return { ...state, audioUrl: action.payload };
+      return { ...state, audioUrl: action.payload }
     case 'SET_SUBTITLES':
-      return { ...state, subtitles: action.payload };
+      return { ...state, subtitles: action.payload }
     case 'SET_FINAL_VIDEO_URL':
-      return { ...state, finalVideoUrl: action.payload };
+      return { ...state, finalVideoUrl: action.payload }
     case 'FINISH_GENERATION':
-      return { ...state, isGenerating: false };
+      return { ...state, isGenerating: false }
     case 'ERROR':
       return {
         ...state,
@@ -269,11 +270,11 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
         steps: state.steps.map(step =>
           step.status === 'processing' ? { ...step, status: 'error' } : step
         ),
-      };
+      }
     case 'RESET':
-        return initialGenerationState;
+        return initialGenerationState
     default:
-      return state;
+      return state
   }
 }
 
@@ -317,76 +318,76 @@ const splitSentences = (text: string): string[] => {
 }
 
 function alignTranscription(originalScript: string, transcribedChunks: any[]): any[] {
-    const originalWords = originalScript.split(/\s+/).filter(Boolean);
+    const originalWords = originalScript.split(/\s+/).filter(Boolean)
     const transcribedWordsInfo = transcribedChunks.map(chunk => ({
         ...chunk,
         word: chunk.text.trim(),
-    }));
+    }))
 
-    const n = originalWords.length;
-    const m = transcribedWordsInfo.length;
+    const n = originalWords.length
+    const m = transcribedWordsInfo.length
 
-    if (n === 0 || m === 0) return [];
+    if (n === 0 || m === 0) return []
 
-    const dp = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0));
-    const pointers = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0)); // 0: diag, 1: up, 2: left
+    const dp = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0))
+    const pointers = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0)) // 0: diag, 1: up, 2: left
 
-    const normalize = (word: string) => word.toLowerCase().replace(/[.,!?""'"`]/g, '');
+    const normalize = (word: string) => word.toLowerCase().replace(/[.,!?""'"`]/g, '')
 
-    const matchScore = 2;
-    const mismatchPenalty = -1;
-    const gapPenalty = -1;
+    const matchScore = 2
+    const mismatchPenalty = -1
+    const gapPenalty = -1
 
     for (let i = 1; i <= n; i++) {
-        dp[i][0] = i * gapPenalty;
-        pointers[i][0] = 1;
+        dp[i][0] = i * gapPenalty
+        pointers[i][0] = 1
     }
     for (let j = 1; j <= m; j++) {
-        dp[0][j] = j * gapPenalty;
-        pointers[0][j] = 2;
+        dp[0][j] = j * gapPenalty
+        pointers[0][j] = 2
     }
 
     for (let i = 1; i <= n; i++) {
         for (let j = 1; j <= m; j++) {
-            const score = normalize(originalWords[i - 1]) === normalize(transcribedWordsInfo[j - 1].word) ? matchScore : mismatchPenalty;
-            const diagScore = dp[i - 1][j - 1] + score;
-            const upScore = dp[i - 1][j] + gapPenalty;
-            const leftScore = dp[i][j - 1] + gapPenalty;
+            const score = normalize(originalWords[i - 1]) === normalize(transcribedWordsInfo[j - 1].word) ? matchScore : mismatchPenalty
+            const diagScore = dp[i - 1][j - 1] + score
+            const upScore = dp[i - 1][j] + gapPenalty
+            const leftScore = dp[i][j - 1] + gapPenalty
 
             if (diagScore >= upScore && diagScore >= leftScore) {
-                dp[i][j] = diagScore;
-                pointers[i][j] = 0;
+                dp[i][j] = diagScore
+                pointers[i][j] = 0
             } else if (upScore >= leftScore) {
-                dp[i][j] = upScore;
-                pointers[i][j] = 1;
+                dp[i][j] = upScore
+                pointers[i][j] = 1
             } else {
-                dp[i][j] = leftScore;
-                pointers[i][j] = 2;
+                dp[i][j] = leftScore
+                pointers[i][j] = 2
             }
         }
     }
 
-    const alignedChunks = [];
-    let i = n;
-    let j = m;
+    const alignedChunks = []
+    let i = n
+    let j = m
 
     while (i > 0 && j > 0) {
-        const pointer = pointers[i][j];
+        const pointer = pointers[i][j]
         if (pointer === 0) {
             alignedChunks.unshift({
                 ...transcribedWordsInfo[j - 1],
                 text: ` ${originalWords[i - 1]}`,
-            });
-            i--;
-            j--;
+            })
+            i--
+            j--
         } else if (pointer === 1) {
-            i--;
+            i--
         } else {
-            j--;
+            j--
         }
     }
 
-    return alignedChunks;
+    return alignedChunks
 }
 
 export function ReelGenerator() {
@@ -405,8 +406,8 @@ export function ReelGenerator() {
   const [videoSize, setVideoSize] = useState<VideoSize>(VIDEO_SIZES[0])
   const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>(DEFAULT_SUBTITLE_STYLE)
   
-  const [generationState, dispatch] = React.useReducer(generationReducer, initialGenerationState);
-  const { isGenerating, steps: generationSteps, audioUrl: generatedAudioUrl, subtitles, finalVideoUrl } = generationState;
+  const [generationState, dispatch] = React.useReducer(generationReducer, initialGenerationState)
+  const { isGenerating, steps: generationSteps, audioUrl: generatedAudioUrl, subtitles, finalVideoUrl } = generationState
 
   const [backgroundVideoUrl, setBackgroundVideoUrl] = useState<string | null>(null)
   const [activeSubtitleChunk, setActiveSubtitleChunk] = useState<any | null>(null)
@@ -496,7 +497,8 @@ export function ReelGenerator() {
       dispatch({ type: 'SET_AUDIO_URL', payload: audioUrl })
       
       dispatch({ type: 'UPDATE_STEP', payload: { id: 'audio', update: { status: 'completed', progress: 100 } } })
-      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles', update: { status: 'processing', progress: 10 } } })
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles_encoding', update: { status: 'processing', progress: 0 } } })
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles_decoding', update: { status: 'processing', progress: 0 } } })
 
       if (!transcriberRef.current) {
         const { pipeline } = await import('@huggingface/transformers')
@@ -507,10 +509,18 @@ export function ReelGenerator() {
             dtype: 'fp32',
             device: 'webgpu',
             progress_callback: (progressInfo: ProgressInfo) => {
-              if ('status' in progressInfo && progressInfo.status === 'progress') {
-                const progress = 10 + (progressInfo.progress * 0.8)
-                console.log(progressInfo)
-                dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles', update: { progress } } })
+              if (progressInfo.status === 'progress') {
+                let stepId: 'subtitles_encoding' | 'subtitles_decoding' | null = null
+                if (progressInfo.file === 'onnx/encoder_model.onnx') {
+                  stepId = 'subtitles_encoding'
+                } else if (progressInfo.file === 'onnx/decoder_model_merged.onnx') {
+                  stepId = 'subtitles_decoding'
+                }
+                
+                if (stepId) {
+                  const progress = progressInfo.progress
+                  dispatch({ type: 'UPDATE_STEP', payload: { id: stepId, update: { progress } } })
+                }
               }
             }
           }
@@ -530,14 +540,12 @@ export function ReelGenerator() {
       
       const safeChunks = chunks || []
       
-      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles', update: { progress: 98 } } })
-      await new Promise(resolve => setTimeout(resolve, 50))
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles_encoding', update: { status: 'completed', progress: 100 } } })
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles_decoding', update: { status: 'completed', progress: 100 } } })
 
       const alignedChunks = alignTranscription(script, safeChunks)
       const sentenceChunks = groupWords(alignedChunks)
       dispatch({ type: 'SET_SUBTITLES', payload: sentenceChunks })
-      
-      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles', update: { status: 'completed', progress: 100 } } })
 
       dispatch({ type: 'UPDATE_STEP', payload: { id: 'processing', update: { status: 'processing', progress: 0 } } })
       if (backgroundVideo) {
