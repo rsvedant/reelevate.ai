@@ -206,6 +206,77 @@ type GenerationStep = {
   progress: number
 }
 
+type GenerationState = {
+  isGenerating: boolean;
+  steps: GenerationStep[];
+  audioUrl: string | null;
+  subtitles: any[] | null;
+  finalVideoUrl: string | null;
+  error: Error | null;
+};
+
+type GenerationAction =
+  | { type: 'START_GENERATION' }
+  | { type: 'UPDATE_STEP'; payload: { id: string; update: Partial<Omit<GenerationStep, 'id'>> } }
+  | { type: 'SET_AUDIO_URL'; payload: string | null }
+  | { type: 'SET_SUBTITLES'; payload: any[] | null }
+  | { type: 'SET_FINAL_VIDEO_URL'; payload: string | null }
+  | { type: 'FINISH_GENERATION' }
+  | { type: 'ERROR'; payload: Error }
+  | { type: 'RESET' };
+
+const initialGenerationState: GenerationState = {
+  isGenerating: false,
+  steps: [
+    { id: 'audio', name: 'Generating Audio', status: 'pending', progress: 0 },
+    { id: 'subtitles', name: 'Creating Subtitles', status: 'pending', progress: 0 },
+    { id: 'processing', name: 'Processing Video', status: 'pending', progress: 0 },
+    { id: 'finalizing', name: 'Finalizing Reel', status: 'pending', progress: 0 },
+  ],
+  audioUrl: null,
+  subtitles: null,
+  finalVideoUrl: null,
+  error: null,
+};
+
+function generationReducer(state: GenerationState, action: GenerationAction): GenerationState {
+  switch (action.type) {
+    case 'START_GENERATION':
+      return {
+        ...initialGenerationState,
+        isGenerating: true,
+      };
+    case 'UPDATE_STEP':
+      return {
+        ...state,
+        steps: state.steps.map(step =>
+          step.id === action.payload.id ? { ...step, ...action.payload.update } : step
+        ),
+      };
+    case 'SET_AUDIO_URL':
+      return { ...state, audioUrl: action.payload };
+    case 'SET_SUBTITLES':
+      return { ...state, subtitles: action.payload };
+    case 'SET_FINAL_VIDEO_URL':
+      return { ...state, finalVideoUrl: action.payload };
+    case 'FINISH_GENERATION':
+      return { ...state, isGenerating: false };
+    case 'ERROR':
+      return {
+        ...state,
+        isGenerating: false,
+        error: action.payload,
+        steps: state.steps.map(step =>
+          step.status === 'processing' ? { ...step, status: 'error' } : step
+        ),
+      };
+    case 'RESET':
+        return initialGenerationState;
+    default:
+      return state;
+  }
+}
+
 const VIDEO_SIZES: VideoSize[] = [
   { name: "9:16 (Shorts)", width: 1080, height: 1920, aspectRatio: "9:16", icon: Smartphone },
   { name: "16:9 (Landscape)", width: 1920, height: 1080, aspectRatio: "16:9", icon: Monitor },
@@ -334,19 +405,10 @@ export function ReelGenerator() {
   const [videoSize, setVideoSize] = useState<VideoSize>(VIDEO_SIZES[0])
   const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>(DEFAULT_SUBTITLE_STYLE)
   
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generationSteps, setGenerationSteps] = useState<GenerationStep[]>([
-    { id: 'audio', name: 'Generating Audio', status: 'pending', progress: 0 },
-    { id: 'subtitles', name: 'Creating Subtitles', status: 'pending', progress: 0 },
-    { id: 'processing', name: 'Processing Video', status: 'pending', progress: 0 },
-    { id: 'finalizing', name: 'Finalizing Reel', status: 'pending', progress: 0 },
-  ])
-  
-  const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null)
-  const [subtitles, setSubtitles] = useState<any[] | null>(null)
+  const [generationState, dispatch] = React.useReducer(generationReducer, initialGenerationState);
+  const { isGenerating, steps: generationSteps, audioUrl: generatedAudioUrl, subtitles, finalVideoUrl } = generationState;
+
   const [backgroundVideoUrl, setBackgroundVideoUrl] = useState<string | null>(null)
-  const [vttUrl, setVttUrl] = useState<string | null>(null)
-  const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null)
   const [activeSubtitleChunk, setActiveSubtitleChunk] = useState<any | null>(null)
   const [activeWord, setActiveWord] = useState<any | null>(null)
   
@@ -363,16 +425,6 @@ export function ReelGenerator() {
 
   const [videoPlayerSize, setVideoPlayerSize] = useState({ width: 0, height: 0 })
 
-  const updateGenerationStep = useCallback((stepId: string, status: GenerationStep['status'], progress: number) => {
-    setGenerationSteps(prev => prev.map(step => 
-      step.id === stepId ? { ...step, status, progress } : step
-    ))
-  }, [])
-
-  const resetGenerationSteps = useCallback(() => {
-    setGenerationSteps(prev => prev.map(step => ({ ...step, status: 'pending', progress: 0 })))
-  }, [])
-
   const handleVideoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
@@ -381,52 +433,15 @@ export function ReelGenerator() {
     }
   }, [])
 
-  const generateAdvancedVTT = useCallback((chunks: any[], style: SubtitleStyle) => {
-    let vtt = "WEBVTT\n\n"
-    vtt += "STYLE\n"
-    vtt += "::cue {\n"
-    vtt += `  font-family: ${style.fontFamily};\n`
-    vtt += `  font-size: ${style.fontSize}px;\n`
-    vtt += `  font-weight: ${style.fontWeight};\n`
-    vtt += `  color: ${style.color};\n`
-    vtt += `  text-stroke: ${style.strokeWidth}px ${style.strokeColor};\n`
-    vtt += "  background-color: transparent;\n"
-    vtt += "  text-align: center;\n"
-    vtt += "  white-space: pre-line;\n"
-    vtt += "}\n\n"
-    
-    chunks.forEach((chunk, index) => {
-      const [start, end] = chunk.timestamp
-      vtt += `${index + 1}\n`
-      vtt += `${formatTimestamp(start)} --> ${formatTimestamp(end)}\n`
-      
-      const words = chunk.text.trim().split(' ')
-      const emphasizedText = words.map((word: string, i: number) => {
-        if (i === Math.floor(words.length / 2)) {
-          return `<b>${word}</b>`
-        }
-        return word
-      }).join(' ')
-      
-      vtt += `${emphasizedText}\n\n`
-    })
-    
-    return vtt
-  }, [])
-
   const generateReel = async () => {
     if (!script) return
 
-    setIsGenerating(true)
-    setGeneratedAudioUrl(null)
-    setSubtitles(null)
-    setFinalVideoUrl(null)
-    resetGenerationSteps()
+    dispatch({ type: 'START_GENERATION' })
 
     let ffmpeg: any = null
 
     try {
-      updateGenerationStep('audio', 'processing', 10)
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'audio', update: { status: 'processing', progress: 10 } } })
 
       if (!ttsRef.current) {
         const { KokoroTTS } = await import('kokoro-js')
@@ -437,8 +452,9 @@ export function ReelGenerator() {
             dtype: "fp32",
             progress_callback: (progressInfo: ProgressInfo) => {
               if (progressInfo.status === 'progress') {
-                const modelLoadProgress = progressInfo.progress * 0.7 // 0-70%
-                updateGenerationStep('audio', 'processing', 10 + modelLoadProgress)
+                const progress = progressInfo.progress * 0.7 // 0-70%
+                console.log(progressInfo)
+                dispatch({ type: 'UPDATE_STEP', payload: { id: 'audio', update: { status: 'processing', progress: 10 + progress } } })
               }
             }
           }
@@ -463,7 +479,7 @@ export function ReelGenerator() {
         sampleRate = raw.sampling_rate || 24000
 
         const progress = generationStartProgress + (generationTotalProgress * (i + 1) / sentences.length)
-        updateGenerationStep('audio', 'processing', progress)
+        dispatch({ type: 'UPDATE_STEP', payload: { id: 'audio', update: { progress } } })
       }
       
       const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0)
@@ -477,11 +493,10 @@ export function ReelGenerator() {
       const wav = encodeWAV(result, sampleRate)
       const blob = new Blob([wav], { type: "audio/wav" })
       const audioUrl = URL.createObjectURL(blob)
-      setGeneratedAudioUrl(audioUrl)
+      dispatch({ type: 'SET_AUDIO_URL', payload: audioUrl })
       
-      updateGenerationStep('audio', 'completed', 100)
-
-      updateGenerationStep('subtitles', 'processing', 10)
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'audio', update: { status: 'completed', progress: 100 } } })
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles', update: { status: 'processing', progress: 10 } } })
 
       if (!transcriberRef.current) {
         const { pipeline } = await import('@huggingface/transformers')
@@ -494,7 +509,8 @@ export function ReelGenerator() {
             progress_callback: (progressInfo: ProgressInfo) => {
               if ('status' in progressInfo && progressInfo.status === 'progress') {
                 const progress = 10 + (progressInfo.progress * 0.8)
-                updateGenerationStep('subtitles', 'processing', progress)
+                console.log(progressInfo)
+                dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles', update: { progress } } })
               }
             }
           }
@@ -514,20 +530,16 @@ export function ReelGenerator() {
       
       const safeChunks = chunks || []
       
-      updateGenerationStep('subtitles', 'processing', 98)
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles', update: { progress: 98 } } })
       await new Promise(resolve => setTimeout(resolve, 50))
 
       const alignedChunks = alignTranscription(script, safeChunks)
       const sentenceChunks = groupWords(alignedChunks)
-      setSubtitles(sentenceChunks)
-
-      const vttContent = generateAdvancedVTT(sentenceChunks, subtitleStyle)
-      const vttBlob = new Blob([vttContent], { type: "text/vtt" })
-      setVttUrl(URL.createObjectURL(vttBlob))
+      dispatch({ type: 'SET_SUBTITLES', payload: sentenceChunks })
       
-      updateGenerationStep('subtitles', 'completed', 100)
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'subtitles', update: { status: 'completed', progress: 100 } } })
 
-      updateGenerationStep('processing', 'processing', 0)
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'processing', update: { status: 'processing', progress: 0 } } })
       if (backgroundVideo) {
         const baseURLFFMPEG = 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/umd'
         const baseURLCore = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
@@ -544,7 +556,7 @@ export function ReelGenerator() {
 
         ffmpeg.on('log', ({ message }: { message: string }) => console.log(message))
         ffmpeg.on('progress', ({ progress }: { progress: number }) => {
-          updateGenerationStep('processing', 'processing', Math.round(progress * 100))
+          dispatch({ type: 'UPDATE_STEP', payload: { id: 'processing', update: { progress: Math.round(progress * 100) } } })
         })
         
         const config = {
@@ -554,7 +566,7 @@ export function ReelGenerator() {
         }
         await ffmpeg.load(config)
         
-        updateGenerationStep('processing', 'processing', 10)
+        dispatch({ type: 'UPDATE_STEP', payload: { id: 'processing', update: { progress: 10 } } })
 
         await ffmpeg.createDir('/fonts')
         const font = await fetchFile('https://db.onlinewebfonts.com/t/1b3f9cb78376a36884f3908f37a42c91.ttf')
@@ -581,20 +593,18 @@ export function ReelGenerator() {
         
         const data = await ffmpeg.readFile('output.mp4')
         const finalBlob = new Blob([data], { type: 'video/mp4' })
-        setFinalVideoUrl(URL.createObjectURL(finalBlob))
+        dispatch({ type: 'SET_FINAL_VIDEO_URL', payload: URL.createObjectURL(finalBlob) })
       }
       
-      updateGenerationStep('processing', 'completed', 100)
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'processing', update: { status: 'completed', progress: 100 } } })
 
-      updateGenerationStep('finalizing', 'processing', 80)
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'finalizing', update: { status: 'processing', progress: 80 } } })
       await new Promise(resolve => setTimeout(resolve, 300))
-      updateGenerationStep('finalizing', 'completed', 100)
+      dispatch({ type: 'UPDATE_STEP', payload: { id: 'finalizing', update: { status: 'completed', progress: 100 } } })
 
     } catch (error) {
       console.error("Error generating reel:", error)
-      setGenerationSteps(prev => prev.map(step => 
-        step.status === 'processing' ? { ...step, status: 'error' } : step
-      ))
+      dispatch({ type: 'ERROR', payload: error as Error })
     } finally {
       if (ffmpeg) {
         try {
@@ -603,7 +613,7 @@ export function ReelGenerator() {
           console.error("Failed to terminate ffmpeg", e)
         }
       }
-      setIsGenerating(false)
+      dispatch({ type: 'FINISH_GENERATION' })
     }
   }
 
