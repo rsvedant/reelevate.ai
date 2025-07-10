@@ -510,6 +510,7 @@ export function ReelGenerator() {
             device: 'webgpu',
             progress_callback: (progressInfo: ProgressInfo) => {
               if (progressInfo.status === 'progress') {
+                console.log(progressInfo)
                 let stepId: 'subtitles_encoding' | 'subtitles_decoding' | null = null
                 if (progressInfo.file === 'onnx/encoder_model.onnx') {
                   stepId = 'subtitles_encoding'
