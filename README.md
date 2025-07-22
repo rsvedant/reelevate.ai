@@ -57,7 +57,7 @@ Simply visit [https://reelevate-ai.vercel.app/](https://reelevate-ai.vercel.app/
 
 #### Prerequisites
 - Node.js 18+ 
-- npm or yarn
+- npm or bun
 - WebGPU-enabled browser
 
 #### Installation
